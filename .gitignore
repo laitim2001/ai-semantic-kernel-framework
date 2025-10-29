@@ -80,8 +80,10 @@ coverage/
 site/
 _site/
 
-# Claude Code 臨時文件
+# Claude Code 臨時文件和本地配置
 .claude/cache/
+.claude/settings.local.json
+.claude/*.local.json
 claudedocs/temp/
 
 # Web bundles (如果是生成的)
