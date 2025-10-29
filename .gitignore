@@ -1,0 +1,92 @@
+# OS 相關
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE 相關
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# 編譯和打包
+dist/
+build/
+*.egg-info/
+
+# 日誌和資料庫
+*.log
+*.sqlite
+*.db
+
+# 環境變數和密鑰
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+appsettings.Development.json
+secrets.json
+
+# 臨時文件
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Azure 相關
+*.publishsettings
+*.azurePubxml
+
+# Docker
+.dockerignore
+
+# 測試覆蓋率
+coverage/
+*.coverage
+.nyc_output/
+
+# 文檔生成
+site/
+_site/
+
+# Claude Code 臨時文件
+.claude/cache/
+claudedocs/temp/
+
+# Web bundles (如果是生成的)
+web-bundles/
+
+# BMad Method 工作目錄的臨時文件
+.bmad-*/temp/
+.bmad-*/cache/

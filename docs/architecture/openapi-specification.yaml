@@ -1,0 +1,980 @@
+openapi: 3.0.3
+info:
+  title: Semantic Kernel Agentic Framework API
+  version: 1.0.0
+  description: |
+    RESTful API for Semantic Kernel Agentic Framework
+
+    **核心功能**：
+    - Agent 管理（創建、配置、執行）
+    - Multi-Agent 編排
+    - Plugin 管理
+    - Code Interpreter 執行
+    - 對話與 Streaming
+
+    **認證方式**：OAuth 2.0 (Microsoft Entra ID)
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.agentic-framework.com/v1
+    description: Production Server
+  - url: https://api-staging.agentic-framework.com/v1
+    description: Staging Server
+  - url: http://localhost:5000/v1
+    description: Local Development Server
+
+security:
+  - OAuth2:
+      - agents.read
+      - agents.write
+      - plugins.read
+      - plugins.write
+
+tags:
+  - name: Agents
+    description: Agent 管理與執行
+  - name: Plugins
+    description: Plugin 管理
+  - name: Code Interpreter
+    description: Python/R 代碼執行
+  - name: Chat
+    description: 對話與 Streaming
+  - name: Multi-Agent
+    description: Multi-Agent 編排
+  - name: Monitoring
+    description: 監控與健康檢查
+
+paths:
+  # ==================== Agent 管理 ====================
+  /agents:
+    get:
+      tags:
+        - Agents
+      summary: 獲取 Agent 列表
+      description: 分頁獲取用戶的所有 Agent
+      operationId: listAgents
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: status
+          in: query
+          description: 過濾 Agent 狀態
+          schema:
+            type: string
+            enum: [active, paused, completed, failed]
+      responses:
+        '200':
+          description: 成功獲取 Agent 列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Agents
+      summary: 創建新 Agent
+      description: 創建並配置新的 Agent
+      operationId: createAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+      responses:
+        '201':
+          description: Agent 創建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /agents/{agentId}:
+    parameters:
+      - name: agentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Agents
+      summary: 獲取 Agent 詳情
+      operationId: getAgent
+      responses:
+        '200':
+          description: Agent 詳情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Agents
+      summary: 更新 Agent 配置
+      operationId: updateAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentRequest'
+      responses:
+        '200':
+          description: Agent 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Agents
+      summary: 刪除 Agent
+      operationId: deleteAgent
+      responses:
+        '204':
+          description: Agent 刪除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Agent 執行 ====================
+  /agents/{agentId}/execute:
+    parameters:
+      - name: agentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+        - Agents
+      summary: 執行 Agent 任務
+      description: 同步執行 Agent 任務（最長 30 秒）
+      operationId: executeAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteAgentRequest'
+      responses:
+        '200':
+          description: Agent 執行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResult'
+        '408':
+          description: 執行超時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: 執行失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /agents/{agentId}/execute-async:
+    parameters:
+      - name: agentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+        - Agents
+      summary: 異步執行 Agent 任務
+      description: 提交長時間運行的任務，返回執行 ID
+      operationId: executeAgentAsync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteAgentRequest'
+      responses:
+        '202':
+          description: 任務已接受，正在執行
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncExecutionResponse'
+
+  /executions/{executionId}:
+    parameters:
+      - name: executionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Agents
+      summary: 獲取執行狀態
+      description: 查詢異步任務的執行狀態和結果
+      operationId: getExecutionStatus
+      responses:
+        '200':
+          description: 執行狀態
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionStatus'
+
+  # ==================== Plugin 管理 ====================
+  /plugins:
+    get:
+      tags:
+        - Plugins
+      summary: 獲取 Plugin 列表
+      operationId: listPlugins
+      parameters:
+        - name: category
+          in: query
+          description: Plugin 分類
+          schema:
+            type: string
+            enum: [data_analysis, file_processing, web_search, custom]
+      responses:
+        '200':
+          description: Plugin 列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plugin'
+
+    post:
+      tags:
+        - Plugins
+      summary: 註冊自定義 Plugin
+      operationId: registerPlugin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterPluginRequest'
+      responses:
+        '201':
+          description: Plugin 註冊成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plugin'
+
+  /plugins/{pluginId}:
+    parameters:
+      - name: pluginId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Plugins
+      summary: 獲取 Plugin 詳情
+      operationId: getPlugin
+      responses:
+        '200':
+          description: Plugin 詳情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginDetail'
+
+  # ==================== Code Interpreter ====================
+  /code-interpreter/execute:
+    post:
+      tags:
+        - Code Interpreter
+      summary: 執行 Python/R 代碼
+      description: 在隔離容器中執行代碼（30 秒超時）
+      operationId: executeCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteCodeRequest'
+      responses:
+        '200':
+          description: 代碼執行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeExecutionResult'
+        '408':
+          description: 執行超時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==================== 對話與 Streaming ====================
+  /chat/completions:
+    post:
+      tags:
+        - Chat
+      summary: 對話補全（支持 Streaming）
+      description: 與 Agent 對話，支持流式輸出
+      operationId: chatCompletions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+      responses:
+        '200':
+          description: 對話響應
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletionResponse'
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-Sent Events (SSE) 流式輸出
+
+  # ==================== Multi-Agent 編排 ====================
+  /orchestration/execute:
+    post:
+      tags:
+        - Multi-Agent
+      summary: 執行 Multi-Agent 協作任務
+      description: 編排多個 Agent 協作完成複雜任務
+      operationId: executeOrchestration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrchestrationRequest'
+      responses:
+        '200':
+          description: 編排執行成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrchestrationResult'
+
+  # ==================== 監控與健康檢查 ====================
+  /health:
+    get:
+      tags:
+        - Monitoring
+      summary: 健康檢查
+      description: 檢查系統健康狀態
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: 系統健康
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: 獲取系統指標
+      description: Prometheus 格式的系統指標
+      operationId: getMetrics
+      security: []
+      responses:
+        '200':
+          description: Prometheus 格式指標
+          content:
+            text/plain:
+              schema:
+                type: string
+
+# ==================== Components ====================
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token
+          scopes:
+            agents.read: 讀取 Agent 信息
+            agents.write: 創建和修改 Agent
+            plugins.read: 讀取 Plugin 信息
+            plugins.write: 註冊和管理 Plugin
+
+  schemas:
+    # ==================== Agent 相關 ====================
+    Agent:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "數據分析 Agent"
+        description:
+          type: string
+          example: "專門用於數據分析和報告生成的 Agent"
+        instructions:
+          type: string
+          description: Agent 的系統指令
+          example: "你是一個專業的數據分析助手，擅長使用 Python 進行數據分析。"
+        status:
+          type: string
+          enum: [active, paused, completed, failed]
+          example: "active"
+        plugins:
+          type: array
+          items:
+            type: string
+          example: ["code_interpreter", "file_search"]
+        model:
+          type: string
+          description: LLM 模型名稱
+          example: "gpt-4o"
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 2
+          default: 0.7
+        maxTokens:
+          type: integer
+          minimum: 1
+          maximum: 128000
+          default: 4096
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateAgentRequest:
+      type: object
+      required:
+        - name
+        - instructions
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        instructions:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        plugins:
+          type: array
+          items:
+            type: string
+        model:
+          type: string
+          default: "gpt-4o"
+        temperature:
+          type: number
+          format: float
+          default: 0.7
+        maxTokens:
+          type: integer
+          default: 4096
+
+    UpdateAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        plugins:
+          type: array
+          items:
+            type: string
+        temperature:
+          type: number
+          format: float
+        maxTokens:
+          type: integer
+
+    AgentList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    # ==================== 執行相關 ====================
+    ExecuteAgentRequest:
+      type: object
+      required:
+        - input
+      properties:
+        input:
+          type: string
+          description: 用戶輸入
+          example: "分析這個 CSV 文件中的銷售趨勢"
+        context:
+          type: object
+          additionalProperties: true
+          description: 上下文數據
+        files:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: 文件 URL 列表
+
+    ExecutionResult:
+      type: object
+      properties:
+        executionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [completed, failed]
+        output:
+          type: string
+          description: Agent 的輸出結果
+        error:
+          type: string
+          description: 錯誤信息（如果失敗）
+        executionTimeMs:
+          type: integer
+          description: 執行時間（毫秒）
+        pluginCalls:
+          type: array
+          items:
+            $ref: '#/components/schemas/PluginCall'
+        completedAt:
+          type: string
+          format: date-time
+
+    AsyncExecutionResponse:
+      type: object
+      properties:
+        executionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running]
+        statusUrl:
+          type: string
+          format: uri
+          description: 狀態查詢 URL
+
+    ExecutionStatus:
+      type: object
+      properties:
+        executionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: 執行進度（百分比）
+        result:
+          $ref: '#/components/schemas/ExecutionResult'
+
+    # ==================== Plugin 相關 ====================
+    Plugin:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "code_interpreter"
+        name:
+          type: string
+          example: "Code Interpreter"
+        description:
+          type: string
+          example: "執行 Python/R 代碼進行數據分析"
+        category:
+          type: string
+          enum: [data_analysis, file_processing, web_search, custom]
+        version:
+          type: string
+          example: "1.0.0"
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PluginFunction'
+
+    PluginDetail:
+      allOf:
+        - $ref: '#/components/schemas/Plugin'
+        - type: object
+          properties:
+            schema:
+              type: object
+              description: Plugin 的完整 JSON Schema
+            examples:
+              type: array
+              items:
+                type: object
+
+    PluginFunction:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "execute_python"
+        description:
+          type: string
+          example: "執行 Python 代碼"
+        parameters:
+          type: object
+          description: JSON Schema 參數定義
+
+    RegisterPluginRequest:
+      type: object
+      required:
+        - name
+        - functions
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PluginFunction'
+
+    PluginCall:
+      type: object
+      properties:
+        pluginId:
+          type: string
+        functionName:
+          type: string
+        parameters:
+          type: object
+        result:
+          type: object
+        executionTimeMs:
+          type: integer
+
+    # ==================== Code Interpreter ====================
+    ExecuteCodeRequest:
+      type: object
+      required:
+        - code
+        - language
+      properties:
+        code:
+          type: string
+          description: Python 或 R 代碼
+          example: |
+            import pandas as pd
+            df = pd.DataFrame(data)
+            print(df.describe())
+        language:
+          type: string
+          enum: [python, r]
+          example: "python"
+        context:
+          type: object
+          additionalProperties: true
+          description: 注入到代碼中的上下文變量
+          example:
+            data:
+              - name: "Alice"
+                age: 30
+              - name: "Bob"
+                age: 25
+
+    CodeExecutionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        output:
+          type: string
+          description: 標準輸出
+        error:
+          type: string
+          description: 錯誤信息（如果失敗）
+        exitCode:
+          type: integer
+        executionTimeMs:
+          type: integer
+
+    # ==================== Chat ====================
+    ChatCompletionRequest:
+      type: object
+      required:
+        - agentId
+        - messages
+      properties:
+        agentId:
+          type: string
+          format: uuid
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        stream:
+          type: boolean
+          default: false
+          description: 是否啟用流式輸出
+        maxTokens:
+          type: integer
+          default: 4096
+
+    ChatMessage:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant, function]
+        content:
+          type: string
+        name:
+          type: string
+          description: Function call 的函數名稱
+
+    ChatCompletionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [chat.completion]
+        created:
+          type: integer
+          format: int64
+        model:
+          type: string
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatChoice'
+        usage:
+          $ref: '#/components/schemas/Usage'
+
+    ChatChoice:
+      type: object
+      properties:
+        index:
+          type: integer
+        message:
+          $ref: '#/components/schemas/ChatMessage'
+        finishReason:
+          type: string
+          enum: [stop, length, function_call]
+
+    Usage:
+      type: object
+      properties:
+        promptTokens:
+          type: integer
+        completionTokens:
+          type: integer
+        totalTokens:
+          type: integer
+
+    # ==================== Multi-Agent ====================
+    OrchestrationRequest:
+      type: object
+      required:
+        - task
+        - agents
+      properties:
+        task:
+          type: string
+          description: 要完成的複雜任務
+          example: "分析這個月的銷售數據並生成報告"
+        agents:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: 參與協作的 Agent ID 列表
+        strategy:
+          type: string
+          enum: [sequential, parallel, dynamic]
+          default: "dynamic"
+          description: 編排策略
+
+    OrchestrationResult:
+      type: object
+      properties:
+        orchestrationId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [completed, partial_success, failed]
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentResult'
+        aggregatedOutput:
+          type: string
+          description: 綜合所有 Agent 的結果
+
+    AgentResult:
+      type: object
+      properties:
+        agentId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [completed, failed]
+        output:
+          type: string
+        executionTimeMs:
+          type: integer
+
+    # ==================== 監控 ====================
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        components:
+          type: object
+          properties:
+            database:
+              $ref: '#/components/schemas/ComponentHealth'
+            redis:
+              $ref: '#/components/schemas/ComponentHealth'
+            llm:
+              $ref: '#/components/schemas/ComponentHealth'
+            containerPool:
+              $ref: '#/components/schemas/ComponentHealth'
+
+    ComponentHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        message:
+          type: string
+        latencyMs:
+          type: integer
+
+    # ==================== 通用 ====================
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalCount:
+          type: integer
+        totalPages:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "invalid_request"
+            message:
+              type: string
+              example: "Invalid input parameter"
+            details:
+              type: object
+              additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: 請求參數錯誤
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: 未授權
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: 資源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
