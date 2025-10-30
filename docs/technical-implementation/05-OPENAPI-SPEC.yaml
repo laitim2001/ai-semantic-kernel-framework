@@ -1,0 +1,1754 @@
+openapi: 3.0.3
+info:
+  title: AI Workflow Platform API
+  version: 1.0.0
+  description: |
+    Complete API specification for the AI Workflow Platform.
+
+    ## Features
+    - **Agent Management**: Create and manage AI agents with custom personas
+    - **Code Execution**: Secure sandboxed code execution
+    - **Text-to-SQL**: Natural language to SQL query generation
+    - **Knowledge RAG**: Document indexing and semantic search
+    - **Workflow Orchestration**: Visual workflow builder with real-time collaboration
+
+    ## Authentication
+    All API endpoints require JWT authentication via the `Authorization` header:
+    ```
+    Authorization: Bearer <jwt_token>
+    ```
+
+    ## Rate Limiting
+    - Free: 60 requests/minute
+    - Basic: 100 requests/minute
+    - Pro: 300 requests/minute
+    - Enterprise: 1000 requests/minute
+
+    ## Base URL
+    Production: `https://api.aiworkflow.com`
+    Staging: `https://api-staging.aiworkflow.com`
+
+  contact:
+    name: AI Workflow Platform Team
+    email: support@aiworkflow.com
+    url: https://docs.aiworkflow.com
+
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.aiworkflow.com
+    description: Production server
+  - url: https://api-staging.aiworkflow.com
+    description: Staging server
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Authentication and authorization
+  - name: Agents
+    description: AI agent management
+  - name: Personas
+    description: Persona template management
+  - name: Code Execution
+    description: Secure code sandbox
+  - name: Text-to-SQL
+    description: Natural language to SQL
+  - name: Knowledge Base
+    description: Document RAG system
+  - name: Workflows
+    description: Workflow orchestration
+  - name: Executions
+    description: Execution history and status
+
+paths:
+  # ============================================================
+  # Auth Service
+  # ============================================================
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: User login
+      description: Authenticate user and return JWT token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecureP@ssw0rd
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  refresh_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+                    example: 86400
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user info
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============================================================
+  # Agent Service
+  # ============================================================
+  /api/v1/agents:
+    get:
+      tags: [Agents]
+      summary: List agents
+      description: Get a paginated list of agents
+      operationId: listAgents
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, archived]
+        - name: persona_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, updated_at, name]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Agent list retrieved successfully
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+            X-Page:
+              schema:
+                type: integer
+            X-Page-Size:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Agent'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  _links:
+                    $ref: '#/components/schemas/PaginationLinks'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+    post:
+      tags: [Agents]
+      summary: Create agent
+      description: Create a new AI agent
+      operationId: createAgent
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+      responses:
+        '201':
+          description: Agent created successfully
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of the created agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/agents/{id}:
+    get:
+      tags: [Agents]
+      summary: Get agent details
+      operationId: getAgent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Agents]
+      summary: Update agent (full)
+      operationId: updateAgent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentRequest'
+      responses:
+        '200':
+          description: Agent updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    patch:
+      tags: [Agents]
+      summary: Update agent (partial)
+      operationId: patchAgent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchAgentRequest'
+      responses:
+        '200':
+          description: Agent updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Agents]
+      summary: Delete agent
+      operationId: deleteAgent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Agent deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/agents/{id}/execute:
+    post:
+      tags: [Agents]
+      summary: Execute agent
+      description: Execute an agent asynchronously
+      operationId: executeAgent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteAgentRequest'
+      responses:
+        '202':
+          description: Execution accepted
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL to poll execution status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  execution_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending]
+                  created_at:
+                    type: string
+                    format: date-time
+                  _links:
+                    type: object
+                    properties:
+                      self:
+                        $ref: '#/components/schemas/Link'
+                      agent:
+                        $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================================
+  # Persona Service
+  # ============================================================
+  /api/v1/personas:
+    get:
+      tags: [Personas]
+      summary: List personas
+      operationId: listPersonas
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Persona list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Persona'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags: [Personas]
+      summary: Create persona
+      operationId: createPersona
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePersonaRequest'
+      responses:
+        '201':
+          description: Persona created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+
+  /api/v1/personas/{id}:
+    get:
+      tags: [Personas]
+      summary: Get persona details
+      operationId: getPersona
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Persona details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Persona'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Personas]
+      summary: Delete persona
+      operationId: deletePersona
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Persona deleted
+
+  /api/v1/personas/{id}/render:
+    post:
+      tags: [Personas]
+      summary: Render persona template
+      operationId: renderPersona
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                variables:
+                  type: object
+                  additionalProperties: true
+                  example:
+                    user_name: "John Doe"
+                    context: "data analysis"
+      responses:
+        '200':
+          description: Rendered template
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rendered:
+                    type: string
+                    example: "You are an expert data analyst..."
+
+  # ============================================================
+  # Code Execution Service
+  # ============================================================
+  /api/v1/code/execute:
+    post:
+      tags: [Code Execution]
+      summary: Execute code
+      description: Execute code in a secure sandbox environment
+      operationId: executeCode
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteCodeRequest'
+      responses:
+        '202':
+          description: Execution accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  execution_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending]
+                  _links:
+                    type: object
+                    properties:
+                      self:
+                        $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/code/executions/{id}:
+    get:
+      tags: [Code Execution]
+      summary: Get code execution result
+      operationId: getCodeExecution
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeExecutionResult'
+
+    delete:
+      tags: [Code Execution]
+      summary: Cancel code execution
+      operationId: cancelCodeExecution
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Execution cancelled
+
+  # ============================================================
+  # Text-to-SQL Service
+  # ============================================================
+  /api/v1/text-to-sql/query:
+    post:
+      tags: [Text-to-SQL]
+      summary: Natural language to SQL query
+      operationId: textToSqlQuery
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextToSqlRequest'
+      responses:
+        '200':
+          description: Query executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TextToSqlResponse'
+        '400':
+          description: Invalid query or unsafe SQL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/text-to-sql/schemas:
+    get:
+      tags: [Text-to-SQL]
+      summary: Get database schemas
+      operationId: getDatabaseSchemas
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Schema list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schemas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DatabaseSchema'
+
+  /api/v1/text-to-sql/validate:
+    post:
+      tags: [Text-to-SQL]
+      summary: Validate SQL safety
+      operationId: validateSql
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sql]
+              properties:
+                sql:
+                  type: string
+                  example: SELECT * FROM users WHERE id = 1
+      responses:
+        '200':
+          description: SQL validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  is_safe:
+                    type: boolean
+                  issues:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Contains DROP keyword", "No WHERE clause"]
+
+  # ============================================================
+  # Knowledge Base Service
+  # ============================================================
+  /api/v1/knowledge/documents:
+    get:
+      tags: [Knowledge Base]
+      summary: List documents
+      operationId: listDocuments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Document list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags: [Knowledge Base]
+      summary: Upload document
+      operationId: uploadDocument
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+
+  /api/v1/knowledge/documents/{id}:
+    delete:
+      tags: [Knowledge Base]
+      summary: Delete document
+      operationId: deleteDocument
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Document deleted
+
+  /api/v1/knowledge/search:
+    post:
+      tags: [Knowledge Base]
+      summary: Semantic search
+      description: Search documents using vector similarity
+      operationId: searchKnowledge
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+  # ============================================================
+  # Workflow Service
+  # ============================================================
+  /api/v1/workflows:
+    get:
+      tags: [Workflows]
+      summary: List workflows
+      operationId: listWorkflows
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Workflow list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workflow'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags: [Workflows]
+      summary: Create workflow
+      operationId: createWorkflow
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+
+  /api/v1/workflows/{id}:
+    get:
+      tags: [Workflows]
+      summary: Get workflow details
+      operationId: getWorkflow
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+
+    delete:
+      tags: [Workflows]
+      summary: Delete workflow
+      operationId: deleteWorkflow
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workflow deleted
+
+  /api/v1/workflows/{id}/execute:
+    post:
+      tags: [Workflows]
+      summary: Execute workflow
+      operationId: executeWorkflow
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Workflow execution started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  execution_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending]
+
+  # ============================================================
+  # Execution Service (Shared)
+  # ============================================================
+  /api/v1/executions:
+    get:
+      tags: [Executions]
+      summary: List executions
+      operationId: listExecutions
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, completed, failed, cancelled]
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Execution'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /api/v1/executions/{id}:
+    get:
+      tags: [Executions]
+      summary: Get execution details
+      operationId: getExecution
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Execution'
+
+  /api/v1/executions/{id}/cancel:
+    post:
+      tags: [Executions]
+      summary: Cancel execution
+      operationId: cancelExecution
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Execution'
+
+# ============================================================
+# Components
+# ============================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/v1/auth/login
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number (1-based)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    PageSizeParam:
+      name: page_size
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    # ============================================================
+    # Common Schemas
+    # ============================================================
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: INVALID_REQUEST
+        message:
+          type: string
+          example: The request is invalid
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              issue:
+                type: string
+        request_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        documentation_url:
+          type: string
+          format: uri
+
+    Link:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        total_count:
+          type: integer
+
+    PaginationLinks:
+      type: object
+      properties:
+        self:
+          $ref: '#/components/schemas/Link'
+        first:
+          $ref: '#/components/schemas/Link'
+        prev:
+          $ref: '#/components/schemas/Link'
+        next:
+          $ref: '#/components/schemas/Link'
+        last:
+          $ref: '#/components/schemas/Link'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # ============================================================
+    # Agent Schemas
+    # ============================================================
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        persona_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, inactive, archived]
+        plugins:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentPlugin'
+        settings:
+          $ref: '#/components/schemas/AgentSettings'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        _links:
+          type: object
+          properties:
+            self:
+              $ref: '#/components/schemas/Link'
+            execute:
+              $ref: '#/components/schemas/Link'
+            persona:
+              $ref: '#/components/schemas/Link'
+
+    AgentPlugin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: code_executor
+        config:
+          type: object
+          additionalProperties: true
+
+    AgentSettings:
+      type: object
+      properties:
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 2
+          default: 0.7
+        max_tokens:
+          type: integer
+          minimum: 1
+          maximum: 128000
+          default: 4000
+        top_p:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 1
+
+    CreateAgentRequest:
+      type: object
+      required: [name, persona_id]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        persona_id:
+          type: string
+          format: uuid
+        plugins:
+          type: array
+          items:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+              config:
+                type: object
+        settings:
+          $ref: '#/components/schemas/AgentSettings'
+
+    UpdateAgentRequest:
+      type: object
+      required: [name, persona_id]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        persona_id:
+          type: string
+          format: uuid
+        settings:
+          $ref: '#/components/schemas/AgentSettings'
+
+    PatchAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        settings:
+          $ref: '#/components/schemas/AgentSettings'
+
+    ExecuteAgentRequest:
+      type: object
+      required: [input]
+      properties:
+        input:
+          type: object
+          required: [query]
+          properties:
+            query:
+              type: string
+              example: Analyze the sales data from Q3
+            context:
+              type: object
+              additionalProperties: true
+        config:
+          type: object
+          properties:
+            timeout:
+              type: integer
+              minimum: 30
+              maximum: 600
+              default: 300
+            priority:
+              type: string
+              enum: [low, normal, high]
+              default: normal
+
+    # ============================================================
+    # Persona Schemas
+    # ============================================================
+    Persona:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        template:
+          type: string
+          description: Scriban template
+        variables:
+          type: object
+          description: Template variables schema
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreatePersonaRequest:
+      type: object
+      required: [name, template]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        template:
+          type: string
+        variables:
+          type: object
+
+    # ============================================================
+    # Code Execution Schemas
+    # ============================================================
+    ExecuteCodeRequest:
+      type: object
+      required: [language, code]
+      properties:
+        language:
+          type: string
+          enum: [python, javascript, typescript]
+        code:
+          type: string
+          example: |
+            import numpy as np
+            print(np.array([1, 2, 3]).sum())
+        timeout:
+          type: integer
+          minimum: 5
+          maximum: 300
+          default: 60
+
+    CodeExecutionResult:
+      type: object
+      properties:
+        execution_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running, completed, failed, timeout]
+        stdout:
+          type: string
+        stderr:
+          type: string
+        exit_code:
+          type: integer
+        execution_time_ms:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    # ============================================================
+    # Text-to-SQL Schemas
+    # ============================================================
+    TextToSqlRequest:
+      type: object
+      required: [query, database_id]
+      properties:
+        query:
+          type: string
+          example: Show me all users who registered last month
+        database_id:
+          type: string
+          format: uuid
+        options:
+          type: object
+          properties:
+            include_explanation:
+              type: boolean
+              default: true
+
+    TextToSqlResponse:
+      type: object
+      properties:
+        generated_sql:
+          type: string
+          example: SELECT * FROM users WHERE created_at >= '2025-09-01'
+        explanation:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+        row_count:
+          type: integer
+        execution_time_ms:
+          type: integer
+
+    DatabaseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/TableSchema'
+
+    TableSchema:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        columns:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+              nullable:
+                type: boolean
+              description:
+                type: string
+
+    # ============================================================
+    # Knowledge Base Schemas
+    # ============================================================
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+        metadata:
+          type: object
+        chunk_count:
+          type: integer
+        indexed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    SearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          example: How to create an AI agent?
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 5
+        filters:
+          type: object
+          additionalProperties: true
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              document_id:
+                type: string
+                format: uuid
+              chunk_id:
+                type: string
+              content:
+                type: string
+              score:
+                type: number
+                format: float
+              metadata:
+                type: object
+
+    # ============================================================
+    # Workflow Schemas
+    # ============================================================
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, paused, archived]
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdge'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WorkflowNode:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [agent, code, sql, rag, condition, trigger]
+        position:
+          type: object
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+        data:
+          type: object
+          additionalProperties: true
+
+    WorkflowEdge:
+      type: object
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        label:
+          type: string
+
+    CreateWorkflowRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdge'
+
+    # ============================================================
+    # Execution Schemas
+    # ============================================================
+    Execution:
+      type: object
+      properties:
+        execution_id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        result:
+          type: object
+          properties:
+            output:
+              type: string
+            insights:
+              type: array
+              items:
+                type: string
+        metrics:
+          type: object
+          properties:
+            execution_time_ms:
+              type: integer
+            tokens_used:
+              type: integer
+            cost:
+              type: number
+              format: float
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        _links:
+          type: object
+          properties:
+            self:
+              $ref: '#/components/schemas/Link'
+            agent:
+              $ref: '#/components/schemas/Link'
+            workflow:
+              $ref: '#/components/schemas/Link'
+
+  # ============================================================
+  # Responses
+  # ============================================================
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: INVALID_REQUEST
+            message: Request validation failed
+            details:
+              - field: name
+                issue: Name is required
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNAUTHORIZED
+            message: Invalid or expired JWT token
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: FORBIDDEN
+            message: Insufficient permissions to access this resource
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: NOT_FOUND
+            message: Resource not found
+
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: CONFLICT
+            message: Resource already exists
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: VALIDATION_ERROR
+            message: Request validation failed
+            details:
+              - field: email
+                issue: Invalid email format
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: RATE_LIMIT_EXCEEDED
+            message: Rate limit exceeded. Maximum 100 requests per minute.
+            retry_after: 60
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: INTERNAL_ERROR
+            message: An unexpected error occurred
+
+security:
+  - BearerAuth: []
