@@ -1,0 +1,52 @@
+# .NET Build Outputs
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.docstates
+
+# Development Configuration (Contains API Keys)
+appsettings.Development.json
+*.Development.json
+
+# User-specific files
+*.rsuser
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options directory
+.vs/
+.vscode/
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+
+# Test Results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# PoC Execution Reports
+poc1-report-*.txt
+execution-log-*.txt
+performance-results-*.txt
