@@ -1,0 +1,12 @@
+# pnpm Workspace Configuration
+# Semantic Kernel Agentic Framework Monorepo
+
+packages:
+  # Frontend Applications
+  - 'apps/*'
+
+  # Shared Packages and SDKs
+  - 'packages/*'
+
+  # Backend Services
+  - 'services/*'
