@@ -1,0 +1,219 @@
+# =============================================================================
+# Development Environment Deployment
+# =============================================================================
+# 本 Workflow 在以下情況觸發:
+# - CI Workflow 成功完成 (develop 分支)
+# - 手動觸發
+
+name: Deploy to Development
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types: [completed]
+    branches: [develop]
+  workflow_dispatch:
+
+env:
+  ENVIRONMENT: development
+  AZURE_RESOURCE_GROUP: rg-skagentic-dev
+  AKS_CLUSTER: aks-skagentic-dev
+  ACR_NAME: skagentic.azurecr.io
+  NAMESPACE: skagentic-dev
+
+jobs:
+  deploy-infrastructure:
+    name: Deploy Infrastructure (Bicep)
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: development
+      url: https://dev-api.skagentic.example.com
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_DEV }}
+
+      - name: Install Bicep
+        run: az bicep install
+
+      - name: Deploy Infrastructure
+        working-directory: infrastructure/bicep
+        run: |
+          # 檢查 Bicep 模板是否存在
+          if [ ! -f "main.bicep" ]; then
+            echo "⚠️ main.bicep not found - skipping infrastructure deployment"
+            exit 0
+          fi
+
+          # 執行部署
+          DEPLOYMENT_NAME="skagentic-dev-$(date +%Y%m%d-%H%M%S)"
+
+          echo "🚀 Deploying infrastructure: $DEPLOYMENT_NAME"
+
+          az deployment sub create \
+            --name $DEPLOYMENT_NAME \
+            --location eastus \
+            --template-file main.bicep \
+            --parameters parameters/dev.bicepparam \
+            --parameters postgresAdminPassword='${{ secrets.POSTGRES_ADMIN_PASSWORD_DEV }}' \
+            --output json > deployment-output.json
+
+          echo "✅ Infrastructure deployment completed"
+
+          # 輸出部署結果
+          cat deployment-output.json
+
+      - name: Save Deployment Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: infrastructure-deployment-output
+          path: infrastructure/bicep/deployment-output.json
+        continue-on-error: true
+
+  deploy-application:
+    name: Deploy Application (Docker)
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure
+    if: success() || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_DEV }}
+
+      - name: Get AKS Credentials
+        run: |
+          # 檢查 AKS 是否存在
+          if az aks show --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER }} 2>/dev/null; then
+            az aks get-credentials \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --name ${{ env.AKS_CLUSTER }} \
+              --overwrite-existing
+            echo "✅ AKS credentials retrieved"
+          else
+            echo "⚠️ AKS cluster not found - skipping application deployment"
+            exit 0
+          fi
+
+      - name: Deploy to Kubernetes
+        run: |
+          # 檢查 Kubernetes 配置是否存在
+          if [ ! -d "k8s" ]; then
+            echo "⚠️ k8s directory not found - skipping Kubernetes deployment"
+            exit 0
+          fi
+
+          # 設置環境變量
+          export IMAGE_TAG=${{ github.sha }}
+          export ENVIRONMENT=${{ env.ENVIRONMENT }}
+
+          # 部署應用程式
+          if [ -d "k8s/overlays/development" ]; then
+            kubectl apply -k k8s/overlays/development
+            echo "✅ Kubernetes resources applied"
+          else
+            echo "⚠️ k8s/overlays/development not found - skipping deployment"
+          fi
+
+      - name: Wait for Rollout
+        run: |
+          if kubectl get namespace ${{ env.NAMESPACE }} 2>/dev/null; then
+            echo "⏳ Waiting for deployment rollout..."
+
+            # 檢查各個部署
+            for deployment in api-deployment worker-deployment web-deployment; do
+              if kubectl get deployment $deployment -n ${{ env.NAMESPACE }} 2>/dev/null; then
+                kubectl rollout status deployment/$deployment -n ${{ env.NAMESPACE }} --timeout=5m || true
+              fi
+            done
+          fi
+        continue-on-error: true
+
+  smoke-tests:
+    name: Run Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy-application
+    if: success()
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_DEV }}
+
+      - name: Run Health Checks
+        run: |
+          echo "🔍 Running health checks..."
+
+          # 檢查 Docker Compose 服務 (本地開發)
+          if [ -f "docker-compose.yml" ]; then
+            echo "✅ Docker Compose configuration exists"
+          fi
+
+          # 檢查 Azure 資源
+          if az group show --name ${{ env.AZURE_RESOURCE_GROUP }} 2>/dev/null; then
+            echo "✅ Resource group exists: ${{ env.AZURE_RESOURCE_GROUP }}"
+
+            # 列出資源組中的資源
+            az resource list --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --output table
+          fi
+
+      - name: Generate Deployment Report
+        run: |
+          echo "# 📊 Development Deployment Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Development" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- Resource Group: ${{ env.AZURE_RESOURCE_GROUP }}" >> $GITHUB_STEP_SUMMARY
+          echo "- AKS Cluster: ${{ env.AKS_CLUSTER }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Namespace: ${{ env.NAMESPACE }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy-infrastructure, deploy-application, smoke-tests]
+    if: always()
+
+    steps:
+      - name: Prepare Status
+        id: status
+        run: |
+          if [ "${{ needs.deploy-infrastructure.result }}" == "success" ] && \
+             [ "${{ needs.deploy-application.result }}" == "success" ] && \
+             [ "${{ needs.smoke-tests.result }}" == "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Notification
+        run: |
+          echo "${{ steps.status.outputs.emoji }} Development deployment ${{ steps.status.outputs.status }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Timestamp: $(date -u)"

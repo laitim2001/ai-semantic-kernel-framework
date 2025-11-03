@@ -1,0 +1,273 @@
+# =============================================================================
+# Continuous Integration Workflow
+# =============================================================================
+# 本 Workflow 在以下情況觸發:
+# - Push 到 develop 或 main 分支
+# - 針對 develop 或 main 的 Pull Request
+# - 手動觸發
+
+name: Continuous Integration
+
+on:
+  push:
+    branches: [develop, main, master]
+  pull_request:
+    branches: [develop, main, master]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  NODE_VERSION: '20.x'
+  DOCKER_REGISTRY: skagentic.azurecr.io
+  SONAR_PROJECT_KEY: semantic-kernel-agentic-framework
+
+jobs:
+  # ==================== 代碼質量檢查 ====================
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 完整歷史記錄用於 SonarQube 分析
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore Dependencies
+        run: |
+          # 檢查是否存在 .NET 解決方案
+          if [ -f "src/AIAgentPlatform.sln" ]; then
+            dotnet restore src/AIAgentPlatform.sln
+          else
+            echo "No .NET solution found - skipping .NET restore"
+          fi
+
+      - name: Build Solution
+        run: |
+          if [ -f "src/AIAgentPlatform.sln" ]; then
+            dotnet build src/AIAgentPlatform.sln --configuration Release --no-restore
+          else
+            echo "No .NET solution found - skipping .NET build"
+          fi
+
+      - name: Run Unit Tests with Coverage
+        run: |
+          if [ -f "src/AIAgentPlatform.sln" ]; then
+            dotnet test src/AIAgentPlatform.sln \
+              --configuration Release \
+              --no-build \
+              --logger "trx;LogFileName=test-results.trx" \
+              --collect:"XPlat Code Coverage" \
+              --results-directory ./TestResults
+          else
+            echo "No .NET solution found - skipping .NET tests"
+          fi
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults/**/*.trx
+          if-no-files-found: ignore
+
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: ./TestResults/**/coverage.*.xml
+          if-no-files-found: ignore
+
+  # ==================== Docker Compose 驗證 ====================
+  docker-compose-validation:
+    name: Docker Compose Validation
+    runs-on: ubuntu-latest
+    needs: code-quality
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: |
+          if [ -f "docker-compose.yml" ]; then
+            docker compose config
+            echo "✅ Docker Compose configuration is valid"
+          else
+            echo "No docker-compose.yml found - skipping validation"
+          fi
+
+      - name: Start Docker Services
+        run: |
+          if [ -f "docker-compose.yml" ]; then
+            docker compose up -d
+            echo "⏳ Waiting for services to be healthy..."
+            sleep 30
+          fi
+
+      - name: Verify PostgreSQL
+        run: |
+          if docker ps | grep -q sk-postgres; then
+            docker exec sk-postgres pg_isready -U postgres || exit 1
+            echo "✅ PostgreSQL is healthy"
+          fi
+
+      - name: Verify Redis
+        run: |
+          if docker ps | grep -q sk-redis; then
+            docker exec sk-redis redis-cli ping | grep -q PONG || exit 1
+            echo "✅ Redis is healthy"
+          fi
+
+      - name: Verify Qdrant
+        run: |
+          if docker ps | grep -q sk-qdrant; then
+            curl -f http://localhost:6333/health || exit 1
+            echo "✅ Qdrant is healthy"
+          fi
+
+      - name: Stop Docker Services
+        if: always()
+        run: |
+          if [ -f "docker-compose.yml" ]; then
+            docker compose down -v
+          fi
+
+  # ==================== Bicep 模板驗證 ====================
+  bicep-validation:
+    name: Bicep Template Validation
+    runs-on: ubuntu-latest
+    needs: code-quality
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+      - name: Install Bicep
+        run: |
+          az bicep install
+
+      - name: Validate Bicep Templates
+        run: |
+          if [ -d "infrastructure/bicep" ]; then
+            cd infrastructure/bicep
+
+            # Build main template
+            echo "Building main.bicep..."
+            az bicep build --file main.bicep
+
+            # Build all module templates
+            echo "Building module templates..."
+            for module in modules/*.bicep; do
+              if [ -f "$module" ]; then
+                echo "Building $module..."
+                az bicep build --file "$module"
+              fi
+            done
+
+            echo "✅ All Bicep templates are valid"
+          else
+            echo "No Bicep templates found - skipping validation"
+          fi
+
+      - name: Lint Bicep Templates
+        run: |
+          if [ -d "infrastructure/bicep" ]; then
+            cd infrastructure/bicep
+            az bicep lint --file main.bicep
+            echo "✅ Bicep linting passed"
+          fi
+
+  # ==================== 安全掃描 ====================
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: code-quality
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'  # 不因掃描結果失敗，僅報告
+
+      - name: Upload Trivy Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ==================== Docker 構建測試 ====================
+  docker-build-test:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    needs: [code-quality, security-scan]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    strategy:
+      matrix:
+        service:
+          - name: test-image
+            context: .
+            dockerfile: ./infrastructure/docker/Dockerfile.test
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image (Test Only)
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: false
+          tags: ${{ matrix.service.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        continue-on-error: true  # Dockerfile 可能尚未創建
+
+  # ==================== 構建摘要 ====================
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [code-quality, docker-compose-validation, bicep-validation, security-scan]
+    if: always()
+
+    steps:
+      - name: Check Build Status
+        run: |
+          echo "# 🎯 CI Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.code-quality.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Compose Validation | ${{ needs.docker-compose-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bicep Validation | ${{ needs.bicep-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Actor**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

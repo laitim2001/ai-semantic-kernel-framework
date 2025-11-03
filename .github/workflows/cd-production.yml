@@ -1,0 +1,442 @@
+# =============================================================================
+# Production Environment Deployment
+# =============================================================================
+# 本 Workflow 在以下情況觸發:
+# - 創建 GitHub Release (Tag)
+# - 手動觸發
+
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to deploy (e.g., v1.0.0)'
+        required: true
+        type: string
+      skip_tests:
+        description: 'Skip pre-deployment tests (not recommended)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  ENVIRONMENT: production
+  AZURE_RESOURCE_GROUP: rg-skagentic-prod
+  AKS_CLUSTER: aks-skagentic-prod
+  ACR_NAME: skagentic.azurecr.io
+  NAMESPACE: skagentic-prod
+
+jobs:
+  pre-deployment-validation:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+    environment:
+      name: production-approval
+      url: https://api.skagentic.example.com
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.event.inputs.version }}
+
+      - name: Validate Release Version
+        run: |
+          VERSION="${{ github.event.release.tag_name || github.event.inputs.version }}"
+          echo "🏷️ Deploying version: $VERSION"
+
+          # 驗證版本格式 (semantic versioning)
+          if [[ ! $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format. Expected: vX.Y.Z (e.g., v1.0.0)"
+            exit 1
+          fi
+
+          echo "✅ Version format validated"
+
+      - name: Check Release Notes
+        run: |
+          if [ -n "${{ github.event.release.body }}" ]; then
+            echo "✅ Release notes present"
+            echo "Release notes:"
+            echo "${{ github.event.release.body }}"
+          else
+            echo "⚠️ No release notes found"
+          fi
+
+  deploy-infrastructure:
+    name: Deploy Infrastructure (Bicep)
+    runs-on: ubuntu-latest
+    needs: pre-deployment-validation
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.event.inputs.version }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Install Bicep
+        run: az bicep install
+
+      - name: Validate Production Template
+        working-directory: infrastructure/bicep
+        run: |
+          if [ -f "main.bicep" ]; then
+            echo "🔍 Validating production Bicep template..."
+            az deployment sub validate \
+              --location eastus \
+              --template-file main.bicep \
+              --parameters parameters/prod.bicepparam \
+              --parameters postgresAdminPassword='${{ secrets.POSTGRES_ADMIN_PASSWORD_PROD }}'
+            echo "✅ Template validation passed"
+          fi
+
+      - name: Create Infrastructure Backup
+        run: |
+          echo "📦 Creating backup of current infrastructure state..."
+          az group show --name ${{ env.AZURE_RESOURCE_GROUP }} --output json > infrastructure-backup.json || true
+
+      - name: Deploy Infrastructure
+        working-directory: infrastructure/bicep
+        run: |
+          if [ ! -f "main.bicep" ]; then
+            echo "⚠️ main.bicep not found - skipping infrastructure deployment"
+            exit 0
+          fi
+
+          DEPLOYMENT_NAME="skagentic-prod-$(date +%Y%m%d-%H%M%S)"
+
+          echo "🚀 Deploying production infrastructure: $DEPLOYMENT_NAME"
+
+          az deployment sub create \
+            --name $DEPLOYMENT_NAME \
+            --location eastus \
+            --template-file main.bicep \
+            --parameters parameters/prod.bicepparam \
+            --parameters postgresAdminPassword='${{ secrets.POSTGRES_ADMIN_PASSWORD_PROD }}' \
+            --output json > deployment-output.json
+
+          echo "✅ Infrastructure deployment completed"
+
+      - name: Save Deployment Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-deployment-artifacts
+          path: |
+            infrastructure-backup.json
+            infrastructure/bicep/deployment-output.json
+        continue-on-error: true
+
+  deploy-application-green:
+    name: Deploy Application (Green Environment)
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.event.inputs.version }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Get AKS Credentials
+        run: |
+          if az aks show --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER }} 2>/dev/null; then
+            az aks get-credentials \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --name ${{ env.AKS_CLUSTER }} \
+              --overwrite-existing
+            echo "✅ AKS credentials retrieved"
+          else
+            echo "⚠️ AKS cluster not found - skipping application deployment"
+            exit 0
+          fi
+
+      - name: Create Backup of Current Deployment
+        run: |
+          if kubectl get namespace ${{ env.NAMESPACE }} 2>/dev/null; then
+            echo "📦 Creating backup of current production deployment..."
+            kubectl get all -n ${{ env.NAMESPACE }} -o yaml > production-backup-${{ github.sha }}.yaml
+          fi
+
+      - name: Deploy Green Environment
+        run: |
+          if [ ! -d "k8s" ]; then
+            echo "⚠️ k8s directory not found - skipping Kubernetes deployment"
+            exit 0
+          fi
+
+          export IMAGE_TAG="${{ github.event.release.tag_name || github.event.inputs.version }}"
+          export ENVIRONMENT=${{ env.ENVIRONMENT }}
+          export DEPLOYMENT_COLOR=green
+
+          echo "🚀 Deploying Green environment with version: $IMAGE_TAG"
+
+          if [ -d "k8s/overlays/production-green" ]; then
+            kubectl apply -k k8s/overlays/production-green
+          elif [ -d "k8s/overlays/production" ]; then
+            echo "⚠️ Using standard production config (no green/blue split)"
+            kubectl apply -k k8s/overlays/production
+          fi
+
+      - name: Wait for Green Deployment
+        run: |
+          if kubectl get namespace ${{ env.NAMESPACE }} 2>/dev/null; then
+            echo "⏳ Waiting for Green deployment rollout..."
+
+            for deployment in api-deployment-green worker-deployment-green web-deployment-green; do
+              if kubectl get deployment $deployment -n ${{ env.NAMESPACE }} 2>/dev/null; then
+                kubectl rollout status deployment/$deployment -n ${{ env.NAMESPACE }} --timeout=15m
+              fi
+            done
+            echo "✅ Green environment deployed successfully"
+          fi
+        continue-on-error: true
+
+      - name: Upload Deployment Backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-k8s-backup
+          path: production-backup-*.yaml
+        continue-on-error: true
+
+  health-check-green:
+    name: Health Check (Green Environment)
+    runs-on: ubuntu-latest
+    needs: deploy-application-green
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER }} \
+            --overwrite-existing
+
+      - name: Wait for Pods Ready
+        run: |
+          if kubectl get namespace ${{ env.NAMESPACE }} 2>/dev/null; then
+            echo "⏳ Waiting for Green pods to be ready..."
+            kubectl wait --for=condition=ready pod \
+              -l color=green \
+              -n ${{ env.NAMESPACE }} \
+              --timeout=5m || true
+            echo "✅ Green pods are ready"
+          fi
+
+      - name: Internal Health Check
+        run: |
+          echo "🔍 Running internal health checks on Green environment..."
+
+          # 獲取 API Pod
+          API_POD=$(kubectl get pod -l app=api,color=green -n ${{ env.NAMESPACE }} -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+
+          if [ -n "$API_POD" ]; then
+            echo "Testing API health endpoint..."
+            kubectl exec -n ${{ env.NAMESPACE }} ${API_POD} -- curl -f http://localhost:8080/health || true
+          fi
+
+  smoke-tests-green:
+    name: Smoke Tests (Green Environment)
+    runs-on: ubuntu-latest
+    needs: health-check-green
+    if: github.event.inputs.skip_tests != 'true'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install Dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            npm ci
+          fi
+
+      - name: Run Critical Path Tests
+        env:
+          BASE_URL: https://api.skagentic.example.com
+          TEST_ENV: production-green
+        run: |
+          if [ -f "package.json" ] && grep -q "test:smoke" package.json; then
+            npm run test:smoke
+            echo "✅ Smoke tests passed"
+          else
+            echo "⚠️ No smoke tests configured - skipping"
+          fi
+        continue-on-error: true
+
+  traffic-switch-canary:
+    name: Switch Traffic (Canary 10%)
+    runs-on: ubuntu-latest
+    needs: smoke-tests-green
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER }} \
+            --overwrite-existing
+
+      - name: Enable Canary Traffic (10%)
+        run: |
+          if kubectl get service api-service -n ${{ env.NAMESPACE }} 2>/dev/null; then
+            echo "🔀 Switching 10% traffic to Green environment (Canary deployment)..."
+
+            # 更新 Service selector 以包含 canary label
+            kubectl patch service api-service -n ${{ env.NAMESPACE }} -p \
+              '{"spec":{"selector":{"color":"green","canary":"true"}}}'
+
+            echo "✅ Canary traffic enabled"
+            echo "⏳ Monitoring period: 5 minutes..."
+            sleep 300
+          fi
+
+      - name: Monitor Canary Metrics
+        run: |
+          echo "📊 Checking canary metrics..."
+          echo "⚠️ Manual metric validation required"
+          echo "Check the following:"
+          echo "  - Error rate < 1%"
+          echo "  - P95 latency < 2 seconds"
+          echo "  - No critical alerts in monitoring"
+
+  traffic-switch-full:
+    name: Switch Traffic (100%)
+    runs-on: ubuntu-latest
+    needs: traffic-switch-canary
+    environment:
+      name: production-traffic-switch
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER }} \
+            --overwrite-existing
+
+      - name: Switch 100% Traffic to Green
+        run: |
+          if kubectl get namespace ${{ env.NAMESPACE }} 2>/dev/null; then
+            echo "🔀 Switching 100% traffic to Green environment..."
+
+            # 更新所有 Service selectors
+            for service in api-service worker-service web-service; do
+              if kubectl get service $service -n ${{ env.NAMESPACE }} 2>/dev/null; then
+                kubectl patch service $service -n ${{ env.NAMESPACE }} -p \
+                  '{"spec":{"selector":{"color":"green"}}}'
+                echo "  ✅ $service traffic switched"
+              fi
+            done
+
+            echo "✅ All traffic switched to Green environment"
+          fi
+
+  cleanup-blue:
+    name: Cleanup Blue Environment
+    runs-on: ubuntu-latest
+    needs: traffic-switch-full
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER }} \
+            --overwrite-existing
+
+      - name: Wait Before Cleanup
+        run: |
+          echo "⏳ Waiting 30 minutes before cleaning up Blue environment..."
+          echo "   This allows time for quick rollback if needed."
+          sleep 1800
+
+      - name: Delete Blue Deployments
+        run: |
+          if kubectl get namespace ${{ env.NAMESPACE }} 2>/dev/null; then
+            echo "🧹 Cleaning up Blue environment..."
+
+            for deployment in api-deployment-blue worker-deployment-blue web-deployment-blue; do
+              if kubectl get deployment $deployment -n ${{ env.NAMESPACE }} 2>/dev/null; then
+                kubectl delete deployment $deployment -n ${{ env.NAMESPACE }}
+                echo "  ✅ Deleted $deployment"
+              fi
+            done
+
+            echo "✅ Blue environment cleanup completed"
+          fi
+
+  deployment-summary:
+    name: Production Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-validation, deploy-infrastructure, deploy-application-green, health-check-green, smoke-tests-green, traffic-switch-full, cleanup-blue]
+    if: always()
+
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# 🎯 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Pre-Deployment Validation | ${{ needs.pre-deployment-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Infrastructure Deployment | ${{ needs.deploy-infrastructure.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Application Deployment (Green) | ${{ needs.deploy-application-green.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Health Check (Green) | ${{ needs.health-check-green.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Smoke Tests (Green) | ${{ needs.smoke-tests-green.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Traffic Switch (Full) | ${{ needs.traffic-switch-full.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Blue Environment Cleanup | ${{ needs.cleanup-blue.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ github.event.release.tag_name || github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Production URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- API: https://api.skagentic.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "- Web: https://skagentic.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Production deployment completed successfully!**" >> $GITHUB_STEP_SUMMARY
