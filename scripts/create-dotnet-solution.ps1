@@ -354,15 +354,15 @@ Write-Host "    ├── $unitTestProject (Domain + Application tests)" -Foregr
 Write-Host "    └── $integrationTestProject (API + Infrastructure tests)" -ForegroundColor Gray
 Write-Host ""
 Write-Host "🎯 Next Steps:" -ForegroundColor Cyan
-Write-Host "  1. Open solution: cd src && code $SolutionName.sln" -ForegroundColor Yellow
+Write-Host "  1. Open solution: cd src; code $SolutionName.sln" -ForegroundColor Yellow
 Write-Host "  2. Read User Story: docs/user-stories/modules/module-01-agent-creation.md" -ForegroundColor Yellow
 Write-Host "  3. Start implementing: Begin with Domain Layer (Agent Entity)" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "🚀 Run API:" -ForegroundColor Cyan
-Write-Host "  cd src/$apiProject && dotnet run" -ForegroundColor Yellow
+Write-Host "  cd src/$apiProject; dotnet run" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "📖 Documentation:" -ForegroundColor Cyan
 Write-Host "  - DEVELOPMENT-SETUP.md (Setup guide)" -ForegroundColor Yellow
 Write-Host "  - NEXT-ACTIONS.md (Development roadmap)" -ForegroundColor Yellow
-Write-Host "  - docs/technical-implementation/3-project-structure/ (Architecture)" -ForegroundColor Yellow
+Write-Host "  - docs/technical-implementation/3-project-structure (Architecture)" -ForegroundColor Yellow
 Write-Host ""
