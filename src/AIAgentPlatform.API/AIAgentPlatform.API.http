@@ -1,0 +1,6 @@
+@AIAgentPlatform.API_HostAddress = http://localhost:5095
+
+GET {{AIAgentPlatform.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

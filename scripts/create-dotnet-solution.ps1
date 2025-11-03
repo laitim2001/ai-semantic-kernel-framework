@@ -338,31 +338,28 @@ Write-Host ""
 # 摘要
 # =============================================================================
 Write-Host "========================================" -ForegroundColor Green
-Write-Host " ✅ Solution scaffold completed!" -ForegroundColor Green
+Write-Host " Solution scaffold completed!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "📂 Project Structure:" -ForegroundColor Cyan
+Write-Host "Project Structure:" -ForegroundColor Cyan
 Write-Host "  src/$SolutionName.sln" -ForegroundColor Gray
-Write-Host "    ├── $domainProject (Core business logic)" -ForegroundColor Gray
-Write-Host "    ├── $applicationProject (Use cases + CQRS)" -ForegroundColor Gray
-Write-Host "    ├── $infrastructureProject (Database + External services)" -ForegroundColor Gray
-Write-Host "    ├── $apiProject (REST API)" -ForegroundColor Gray
-Write-Host "    └── $sharedProject (Common utilities)" -ForegroundColor Gray
+Write-Host "    - $domainProject" -ForegroundColor Gray
+Write-Host "    - $applicationProject" -ForegroundColor Gray
+Write-Host "    - $infrastructureProject" -ForegroundColor Gray
+Write-Host "    - $apiProject" -ForegroundColor Gray
+Write-Host "    - $sharedProject" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  tests/" -ForegroundColor Gray
-Write-Host "    ├── $unitTestProject (Domain + Application tests)" -ForegroundColor Gray
-Write-Host "    └── $integrationTestProject (API + Infrastructure tests)" -ForegroundColor Gray
+Write-Host "    - $unitTestProject" -ForegroundColor Gray
+Write-Host "    - $integrationTestProject" -ForegroundColor Gray
 Write-Host ""
-Write-Host "🎯 Next Steps:" -ForegroundColor Cyan
+Write-Host "Next Steps:" -ForegroundColor Cyan
 Write-Host "  1. Open solution: cd src; code $SolutionName.sln" -ForegroundColor Yellow
-Write-Host "  2. Read User Story: docs/user-stories/modules/module-01-agent-creation.md" -ForegroundColor Yellow
-Write-Host "  3. Start implementing: Begin with Domain Layer (Agent Entity)" -ForegroundColor Yellow
+Write-Host "  2. Read User Story" -ForegroundColor Yellow
+Write-Host "  3. Start implementing Domain Layer" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "🚀 Run API:" -ForegroundColor Cyan
+Write-Host "Run API:" -ForegroundColor Cyan
 Write-Host "  cd src/$apiProject; dotnet run" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "📖 Documentation:" -ForegroundColor Cyan
-Write-Host "  - DEVELOPMENT-SETUP.md" -ForegroundColor Yellow
-Write-Host "  - NEXT-ACTIONS.md" -ForegroundColor Yellow
-Write-Host "  - docs/technical-implementation/3-project-structure" -ForegroundColor Yellow
+Write-Host "See documentation files for details" -ForegroundColor Cyan
 Write-Host ""
