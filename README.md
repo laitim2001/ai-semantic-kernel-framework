@@ -45,8 +45,13 @@
 ✅ Phase 2 - Management (PM): Project Management Plan
 ✅ Phase 3.1 - Architecture: ADD + 4 ADRs
 ✅ Phase 3.2 - Requirements: 43 User Stories + Sprint Planning
-⏸️ Phase 3.3 - UI/UX Designer (待開始 - 2025-11-01)
-⏸️ Phase 3.4 - Tech Lead (待開始 - 2025-11-01)
+✅ Phase 3.3 - UI/UX Designer: 完成 (2025-11-03)
+✅ Phase 3.4 - Tech Lead: 完成 (2025-11-03)
+✅ Sprint 0 - 環境建置: 完成 (2025-11-03)
+🚀 Sprint 1 - 開發中 (2025-11-04)
+   ├── ✅ User Story 1.1: Agent CRUD API (100%)
+   ├── ⏳ User Story 1.2: Conversation CRUD (0%)
+   └── ⏳ User Story 1.3: Agent Execution (0%)
 ⏸️ Phase 3.5 - Integration (待開始 - 2025-11-22)
 ⏸️ Phase 4 - Development: 18 Sprints × 3 weeks = 54 weeks
 ```
@@ -56,20 +61,35 @@
 ## 🏗️ 技術棧
 
 ### 後端
-- **.NET 8** - Runtime 和 Web Framework
-- **ASP.NET Core 8** - API Server
-- **Entity Framework Core 8** - ORM
-- **Semantic Kernel 1.x** - LLM 整合框架
-- **PostgreSQL 16** - 主數據庫
+- **.NET 9** - Runtime 和 Web Framework (C# 12)
+- **ASP.NET Core 9** - API Server
+- **Entity Framework Core 9.0** - ORM
+- **MediatR 12.4** - CQRS 模式
+- **FluentValidation 11.11** - 輸入驗證
+- **Semantic Kernel 1.66.0** - LLM 整合框架
+- **PostgreSQL 16** - 主數據庫 (Npgsql)
 - **Redis 7** - 緩存和狀態管理
-- **Azure AI Search** - 向量數據庫
+- **Qdrant 1.7.4** - 向量數據庫
 
 ### 前端
+#### 主應用 (95% 頁面)
 - **React 18** - UI 框架
 - **TypeScript 5** - 類型安全
 - **Material-UI (MUI)** - UI 組件庫
 - **Redux Toolkit** - 狀態管理
-- **Vite** - 構建工具
+- **Vite 5** - 構建工具
+
+#### 工作流編輯器 (微前端模塊)
+- **Vue 3** - UI 框架 (Composition API)
+- **VueFlow 1.45.0** - Canvas 畫布引擎
+- **Pinia** - 狀態管理
+- **Element Plus** - UI 組件庫
+- **Webpack 5** - 構建工具 (Module Federation)
+
+#### 整合方案
+- **Module Federation** - 微前端架構整合
+- **Yjs CRDT** - 實時協作同步
+- **CSS Variables** - 共享設計令牌
 
 ### LLM 整合
 - **Azure OpenAI** - 主要 LLM Provider
@@ -103,9 +123,21 @@
   預算: TWD $800,000
 
 架構決策:
-  ADRs: 4 個核心架構決策記錄
-  技術棧決策: 後端、前端、LLM、DevOps 完整定義
+  ADRs: 5 個核心架構決策記錄
+    - ADR-012: 工作流編輯器技術選型 (VueFlow + Module Federation)
+  技術棧決策: 後端、前端（微前端）、LLM、DevOps 完整定義
   安全層級: 4 層安全防護（Code Interpreter & Text-to-SQL）
+  參考實現: n8n Canvas.vue (1,800+ 行) + PoC 6 驗證
+
+開發進度 (2025-11-04):
+  ✅ Sprint 0: 環境建置完成
+  🚀 Sprint 1: 開發中 (33% 完成)
+     ├── ✅ US 1.1: Agent CRUD API (100%)
+     │   ├── 程式碼: ~3100 lines
+     │   ├── 測試: 43 tests (100% 通過)
+     │   └── 完成時間: 19.5h (預估 24h, 快 18.75%)
+     ├── ⏳ US 1.2: Conversation CRUD (0%)
+     └── ⏳ US 1.3: Agent Execution (0%)
 ```
 
 ---
@@ -116,15 +148,70 @@
 
 ```bash
 # Windows
-winget install Microsoft.DotNet.SDK.8
+winget install Microsoft.DotNet.SDK.9
 winget install OpenJS.NodeJS.LTS
 winget install Docker.DockerDesktop
 
 # macOS
-brew install dotnet@8
+brew install dotnet@9
 brew install node@20
 brew install --cask docker
 ```
+
+### 快速啟動 (2025-11-04 更新)
+
+**1. 啟動基礎設施服務**:
+```bash
+# 啟動 PostgreSQL, Redis, Qdrant
+docker-compose up -d
+
+# 檢查服務狀態
+.\scripts\health-check.ps1
+```
+
+**2. 啟動後端 API**:
+```bash
+cd src/AIAgentPlatform.API
+dotnet run
+
+# API 將運行在: http://localhost:5095
+# Swagger UI: http://localhost:5095/swagger
+```
+
+**3. 測試 API 端點**:
+```bash
+# 取得 Agents 列表
+curl http://localhost:5095/api/agents
+
+# 創建新 Agent
+curl -X POST http://localhost:5095/api/agents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "My First Agent",
+    "instructions": "You are a helpful assistant.",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "maxTokens": 2000
+  }'
+```
+
+### 當前可用功能 ✨
+
+**✅ Agent CRUD API** (User Story 1.1):
+- `POST /api/agents` - 創建 Agent
+- `GET /api/agents` - 取得 Agent 列表 (分頁)
+- `GET /api/agents/{id}` - 取得單一 Agent
+- `PUT /api/agents/{id}` - 更新 Agent
+- `DELETE /api/agents/{id}` - 刪除 Agent (軟刪除)
+
+**架構驗證**:
+- ✅ Clean Architecture + DDD
+- ✅ CQRS (MediatR + FluentValidation)
+- ✅ Repository Pattern
+- ✅ EF Core + PostgreSQL
+- ✅ Swagger/OpenAPI 文檔
+- ✅ 43 個單元測試 (100% 通過)
 
 ### 本地開發環境
 
@@ -143,10 +230,18 @@ dotnet ef database update
 cd src/Api
 dotnet run
 
-# 5. 啟動 Frontend Dev Server
-cd src/Web
+# 5. 啟動 Frontend Dev Server (React 主應用)
+cd packages/host
 npm install
-npm run dev
+npm run dev  # Port 3000
+
+# 6. 啟動 Workflow Editor (Vue 遠程模塊)
+cd packages/remote
+npm install
+npm run dev  # Port 3001
+
+# 或使用並行啟動腳本
+npm run dev  # 同時啟動 Host 和 Remote
 ```
 
 ---
