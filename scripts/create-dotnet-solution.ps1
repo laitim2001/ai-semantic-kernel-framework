@@ -362,7 +362,7 @@ Write-Host "🚀 Run API:" -ForegroundColor Cyan
 Write-Host "  cd src/$apiProject; dotnet run" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "📖 Documentation:" -ForegroundColor Cyan
-Write-Host "  - DEVELOPMENT-SETUP.md (Setup guide)" -ForegroundColor Yellow
-Write-Host "  - NEXT-ACTIONS.md (Development roadmap)" -ForegroundColor Yellow
-Write-Host "  - docs/technical-implementation/3-project-structure (Architecture)" -ForegroundColor Yellow
+Write-Host "  - DEVELOPMENT-SETUP.md" -ForegroundColor Yellow
+Write-Host "  - NEXT-ACTIONS.md" -ForegroundColor Yellow
+Write-Host "  - docs/technical-implementation/3-project-structure" -ForegroundColor Yellow
 Write-Host ""
