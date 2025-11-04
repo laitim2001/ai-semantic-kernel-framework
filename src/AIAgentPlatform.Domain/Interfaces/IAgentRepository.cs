@@ -18,21 +18,27 @@ public interface IAgentRepository
     Task<List<Agent>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all agents with optional filtering
+    /// Gets all agents with optional filtering, searching, and sorting
     /// </summary>
     Task<List<Agent>> GetAllAsync(
         Guid? userId = null,
         string? status = null,
+        string? searchTerm = null,
+        string? model = null,
+        string? sortBy = null,
+        string? sortOrder = null,
         int skip = 0,
         int take = 50,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets total count of agents with optional filtering
+    /// Gets total count of agents with optional filtering and searching
     /// </summary>
     Task<int> GetCountAsync(
         Guid? userId = null,
         string? status = null,
+        string? searchTerm = null,
+        string? model = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

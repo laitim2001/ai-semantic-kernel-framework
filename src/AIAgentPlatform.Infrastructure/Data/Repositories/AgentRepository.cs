@@ -33,12 +33,17 @@ public sealed class AgentRepository : IAgentRepository
     public async Task<List<Agent>> GetAllAsync(
         Guid? userId = null,
         string? status = null,
+        string? searchTerm = null,
+        string? model = null,
+        string? sortBy = null,
+        string? sortOrder = null,
         int skip = 0,
         int take = 50,
         CancellationToken cancellationToken = default)
     {
         var query = _context.Agents.AsQueryable();
 
+        // Apply filters
         if (userId.HasValue)
         {
             query = query.Where(a => a.UserId == userId.Value);
@@ -49,20 +54,60 @@ public sealed class AgentRepository : IAgentRepository
             query = query.Where(a => a.Status.Value == status.ToLowerInvariant());
         }
 
+        if (!string.IsNullOrWhiteSpace(model))
+        {
+            query = query.Where(a => a.Model.Value == model.ToLowerInvariant());
+        }
+
+        // Apply search
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearchTerm = searchTerm.ToLowerInvariant();
+            query = query.Where(a =>
+                a.Name.ToLower().Contains(lowerSearchTerm) ||
+                (a.Description != null && a.Description.ToLower().Contains(lowerSearchTerm)) ||
+                a.Id.ToString().Contains(lowerSearchTerm)
+            );
+        }
+
+        // Apply sorting
+        query = ApplySorting(query, sortBy, sortOrder);
+
         return await query
-            .OrderByDescending(a => a.CreatedAt)
             .Skip(skip)
             .Take(take)
             .ToListAsync(cancellationToken);
     }
 
+    private static IQueryable<Agent> ApplySorting(IQueryable<Agent> query, string? sortBy, string? sortOrder)
+    {
+        var isDescending = string.IsNullOrWhiteSpace(sortOrder) || sortOrder.ToLowerInvariant() == "desc";
+
+        return (sortBy?.ToLowerInvariant()) switch
+        {
+            "name" => isDescending
+                ? query.OrderByDescending(a => a.Name)
+                : query.OrderBy(a => a.Name),
+            "createdat" or "created" => isDescending
+                ? query.OrderByDescending(a => a.CreatedAt)
+                : query.OrderBy(a => a.CreatedAt),
+            "updatedat" or "updated" => isDescending
+                ? query.OrderByDescending(a => a.UpdatedAt)
+                : query.OrderBy(a => a.UpdatedAt),
+            _ => query.OrderByDescending(a => a.CreatedAt) // Default sort
+        };
+    }
+
     public async Task<int> GetCountAsync(
         Guid? userId = null,
         string? status = null,
+        string? searchTerm = null,
+        string? model = null,
         CancellationToken cancellationToken = default)
     {
         var query = _context.Agents.AsQueryable();
 
+        // Apply filters
         if (userId.HasValue)
         {
             query = query.Where(a => a.UserId == userId.Value);
@@ -71,6 +116,22 @@ public sealed class AgentRepository : IAgentRepository
         if (!string.IsNullOrWhiteSpace(status))
         {
             query = query.Where(a => a.Status.Value == status.ToLowerInvariant());
+        }
+
+        if (!string.IsNullOrWhiteSpace(model))
+        {
+            query = query.Where(a => a.Model.Value == model.ToLowerInvariant());
+        }
+
+        // Apply search
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearchTerm = searchTerm.ToLowerInvariant();
+            query = query.Where(a =>
+                a.Name.ToLower().Contains(lowerSearchTerm) ||
+                (a.Description != null && a.Description.ToLower().Contains(lowerSearchTerm)) ||
+                a.Id.ToString().Contains(lowerSearchTerm)
+            );
         }
 
         return await query.CountAsync(cancellationToken);

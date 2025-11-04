@@ -36,13 +36,26 @@ public sealed class AgentsController : ControllerBase
     }
 
     /// <summary>
-    /// Get a list of agents with pagination and filtering
+    /// Get a list of agents with pagination, filtering, searching, and sorting
     /// </summary>
+    /// <param name="userId">Filter by user ID</param>
+    /// <param name="status">Filter by status (active, paused, archived)</param>
+    /// <param name="searchTerm">Search in name, description, or ID</param>
+    /// <param name="model">Filter by model name (e.g., gpt-4, gpt-4o)</param>
+    /// <param name="sortBy">Sort field: name, createdAt, updatedAt (default: createdAt)</param>
+    /// <param name="sortOrder">Sort order: asc, desc (default: desc)</param>
+    /// <param name="skip">Number of records to skip (default: 0)</param>
+    /// <param name="take">Number of records to take (default: 50, max: 100)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet]
     [ProducesResponseType(typeof(GetAgentsQueryResult), StatusCodes.Status200OK)]
     public async Task<ActionResult<GetAgentsQueryResult>> GetAll(
         [FromQuery] Guid? userId,
         [FromQuery] string? status,
+        [FromQuery] string? searchTerm,
+        [FromQuery] string? model,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortOrder,
         [FromQuery] int skip = 0,
         [FromQuery] int take = 50,
         CancellationToken cancellationToken = default)
@@ -51,6 +64,10 @@ public sealed class AgentsController : ControllerBase
         {
             UserId = userId,
             Status = status,
+            SearchTerm = searchTerm,
+            Model = model,
+            SortBy = sortBy,
+            SortOrder = sortOrder,
             Skip = skip,
             Take = take
         };
