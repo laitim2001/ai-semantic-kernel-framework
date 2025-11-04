@@ -162,4 +162,70 @@ public sealed class AgentsController : ControllerBase
         var result = await _sender.Send(command, cancellationToken);
         return Ok(result);
     }
+
+    // ========== Batch Operations ==========
+
+    /// <summary>
+    /// Batch activate multiple agents
+    /// </summary>
+    /// <param name="command">Command containing list of agent IDs to activate</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("batch/activate")]
+    [ProducesResponseType(typeof(BatchOperationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BatchOperationResult>> BatchActivate(
+        [FromBody] BatchActivateAgentsCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Batch pause multiple agents
+    /// </summary>
+    /// <param name="command">Command containing list of agent IDs to pause</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("batch/pause")]
+    [ProducesResponseType(typeof(BatchOperationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BatchOperationResult>> BatchPause(
+        [FromBody] BatchPauseAgentsCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Batch archive multiple agents
+    /// </summary>
+    /// <param name="command">Command containing list of agent IDs to archive</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("batch/archive")]
+    [ProducesResponseType(typeof(BatchOperationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BatchOperationResult>> BatchArchive(
+        [FromBody] BatchArchiveAgentsCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Batch delete multiple agents (soft delete/archive)
+    /// </summary>
+    /// <param name="command">Command containing list of agent IDs to delete</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("batch/delete")]
+    [ProducesResponseType(typeof(BatchOperationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BatchOperationResult>> BatchDelete(
+        [FromBody] BatchDeleteAgentsCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
 }
