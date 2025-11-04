@@ -106,4 +106,43 @@ public sealed class AgentsController : ControllerBase
         await _sender.Send(command, cancellationToken);
         return NoContent();
     }
+
+    /// <summary>
+    /// Activate an agent (change status to Active)
+    /// </summary>
+    [HttpPost("{id:guid}/activate")]
+    [ProducesResponseType(typeof(AgentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AgentDto>> Activate(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new ActivateAgentCommand { Id = id };
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Pause an agent (change status to Paused)
+    /// </summary>
+    [HttpPost("{id:guid}/pause")]
+    [ProducesResponseType(typeof(AgentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AgentDto>> Pause(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new PauseAgentCommand { Id = id };
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Archive an agent (change status to Archived - soft delete)
+    /// </summary>
+    [HttpPost("{id:guid}/archive")]
+    [ProducesResponseType(typeof(AgentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AgentDto>> Archive(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new ArchiveAgentCommand { Id = id };
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
 }
