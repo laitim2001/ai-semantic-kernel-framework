@@ -164,13 +164,32 @@ SemanticKernel.Agentic/
 │   ├── Api/                    # ASP.NET Core API
 │   ├── Core/                   # 核心業務邏輯
 │   ├── Infrastructure/         # 基礎設施層
-│   ├── Plugins/                # Plugin 實現
-│   └── Web/                    # Frontend (React)
+│   └── Plugins/                # Plugin 實現
+├── packages/                   # 前端 Monorepo (pnpm workspaces)
+│   ├── host/                   # React 主應用 (Port 3000)
+│   │   ├── src/
+│   │   ├── vite.config.ts      # Vite + Module Federation
+│   │   └── package.json
+│   ├── remote/                 # Vue 工作流編輯器 (Port 3001)
+│   │   ├── src/
+│   │   │   ├── WorkflowEditor.vue
+│   │   │   ├── composables/    # useCanvas, useCanvasNode
+│   │   │   └── components/     # 28 種節點類型
+│   │   ├── webpack.config.js   # Webpack 5 + Module Federation
+│   │   └── package.json
+│   ├── shared/                 # 共享層
+│   │   ├── design-tokens/      # CSS Variables
+│   │   ├── types/              # TypeScript 共享類型
+│   │   └── utils/              # Event Bus (mitt)
+│   └── pnpm-workspace.yaml
 ├── tests/
 │   ├── Api.Tests/
 │   ├── Core.Tests/
-│   └── Integration.Tests/
+│   ├── Integration.Tests/
+│   └── E2E.Tests/              # Playwright (跨框架測試)
 ├── docs/
+│   └── architecture/
+│       └── ADR-012-workflow-editor-technology.md
 └── tools/
 ```
 
@@ -193,14 +212,17 @@ SemanticKernel.Agentic/
 
 | 組件 | 技術選型 | 理由 |
 |------|---------|------|
-| **框架** | React 18 | 生態豐富，團隊熟悉 |
+| **主應用框架** | React 18 (Host - 95% 頁面) | 生態豐富，團隊熟悉 |
+| **工作流編輯器** | Vue 3 + VueFlow (Remote - 微前端) | n8n 參考實現，PoC 6 驗證 |
+| **整合方案** | Module Federation (Webpack 5) | 運行時動態加載，工業驗證 |
 | **語言** | TypeScript 5 | 類型安全 |
-| **Build Tool** | Vite | 快速、現代化 |
-| **UI 組件** | Material-UI (MUI) | 組件豐富，可訪問性好 |
-| **狀態管理** | Redux Toolkit | 官方推薦 |
+| **Build Tool** | Vite 5 (Host) + Webpack 5 (Remote) | 各取所長 |
+| **UI 組件** | Material-UI (React) + Element Plus (Vue) | 成熟方案 |
+| **狀態管理** | Redux Toolkit (React) + Pinia (Vue) | 官方推薦 |
 | **路由** | React Router v6 | 標準選擇 |
 | **表單** | React Hook Form | 高性能 |
-| **測試** | Jest + React Testing Library | 社群推薦 |
+| **測試** | Vitest + Testing Library | 統一測試框架 |
+| **協作引擎** | Yjs CRDT + WebSocket | <200ms 延遲 (PoC 6) |
 
 ### LLM 整合
 
@@ -271,10 +293,16 @@ SemanticKernel.Agentic/
 - SQL Injection 防護測試
 - 準確率評估
 
-**Day 11-14: PoC 報告和評審**
-- 撰寫 PoC 驗證報告
-- 團隊評審和決策
-- 風險評估和緩解方案
+**Day 11-14: Knowledge RAG + VueFlow CRDT PoC**
+- PoC 5: Knowledge RAG (Azure AI Search + iText7)
+- PoC 6: VueFlow + CRDT (Yjs + WebSocket)
+  - ✅ 性能: 60 FPS 渲染
+  - ✅ 延遲: <200ms 同步延遲
+  - ✅ 並發: 3+ 用戶協作
+  - ✅ 衝突: CRDT 自動解決
+  - ✅ 參考: n8n Canvas.vue 架構
+
+**結論**: VueFlow + Module Federation 方案可行，ADR-012 決策通過
 
 ---
 
