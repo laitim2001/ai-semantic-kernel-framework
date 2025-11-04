@@ -29,6 +29,8 @@ public static class DependencyInjection
 
         // Register repositories
         services.AddScoped<IAgentRepository, AgentRepository>();
+        services.AddScoped<IConversationRepository, ConversationRepository>();
+        services.AddScoped<IMessageRepository, MessageRepository>();
 
         return services;
     }
