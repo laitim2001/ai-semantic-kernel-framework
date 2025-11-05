@@ -1,5 +1,6 @@
 using AIAgentPlatform.Application.Agents.DTOs;
 using AIAgentPlatform.Application.Agents.Queries;
+using AIAgentPlatform.Domain.Exceptions;
 using AIAgentPlatform.Domain.Interfaces;
 using MediatR;
 
@@ -25,7 +26,7 @@ public class GetAgentVersionHistoryHandler : IRequestHandler<GetAgentVersionHist
     {
         // 驗證 Agent 存在
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
+            ?? throw new EntityNotFoundException($"Agent with ID {request.AgentId} not found");
 
         // 查詢版本歷史
         var versions = await _versionRepository.GetByAgentIdAsync(

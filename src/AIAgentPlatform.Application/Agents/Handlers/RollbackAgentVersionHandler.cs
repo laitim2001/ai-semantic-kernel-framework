@@ -1,5 +1,6 @@
 using System.Text.Json;
 using AIAgentPlatform.Application.Agents.Commands;
+using AIAgentPlatform.Domain.Exceptions;
 using AIAgentPlatform.Domain.Interfaces;
 using AIAgentPlatform.Domain.ValueObjects;
 using MediatR;
@@ -26,11 +27,11 @@ public class RollbackAgentVersionHandler : IRequestHandler<RollbackAgentVersionC
     {
         // 驗證 Agent 存在
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
+            ?? throw new EntityNotFoundException($"Agent with ID {request.AgentId} not found");
 
         // 查詢目標版本
         var targetVersion = await _versionRepository.GetByIdAsync(request.VersionId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Version with ID {request.VersionId} not found");
+            ?? throw new EntityNotFoundException($"Version with ID {request.VersionId} not found");
 
         // 驗證版本屬於該 Agent
         if (targetVersion.AgentId != request.AgentId)

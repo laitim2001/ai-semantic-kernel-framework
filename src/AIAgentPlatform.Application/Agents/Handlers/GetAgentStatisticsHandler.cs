@@ -1,5 +1,6 @@
 using AIAgentPlatform.Application.Agents.DTOs;
 using AIAgentPlatform.Application.Agents.Queries;
+using AIAgentPlatform.Domain.Exceptions;
 using AIAgentPlatform.Domain.Interfaces;
 using MediatR;
 
@@ -25,11 +26,17 @@ public class GetAgentStatisticsHandler : IRequestHandler<GetAgentStatistics, Age
     {
         // 驗證 Agent 存在
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
+            ?? throw new EntityNotFoundException($"Agent with ID {request.AgentId} not found");
 
         // 使用提供的日期範圍，或預設為最近一個月
         var startDate = request.StartDate ?? DateTime.UtcNow.AddMonths(-1);
         var endDate = request.EndDate ?? DateTime.UtcNow;
+
+        // 驗證日期範圍有效性
+        if (endDate < startDate)
+        {
+            throw new ArgumentException("End date must be greater than or equal to start date");
+        }
 
         // 從 AgentExecution Repository 獲取統計資訊
         var (totalExecutions, successfulExecutions, failedExecutions, avgResponseTimeMs) =
