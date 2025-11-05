@@ -1,4 +1,5 @@
 using AIAgentPlatform.Application.Agents.Commands;
+using AIAgentPlatform.Domain.Entities;
 using AIAgentPlatform.Domain.Interfaces;
 using MediatR;
 
@@ -6,15 +7,21 @@ namespace AIAgentPlatform.Application.Agents.Handlers;
 
 /// <summary>
 /// 處理將 Plugin 添加到 Agent
-/// NOTE: 目前為骨架實作,實際的 Plugin 實體和關聯邏輯需在後續階段完善
 /// </summary>
 public class AddPluginToAgentHandler : IRequestHandler<AddPluginToAgentCommand, bool>
 {
     private readonly IAgentRepository _agentRepository;
+    private readonly IPluginRepository _pluginRepository;
+    private readonly IAgentPluginRepository _agentPluginRepository;
 
-    public AddPluginToAgentHandler(IAgentRepository agentRepository)
+    public AddPluginToAgentHandler(
+        IAgentRepository agentRepository,
+        IPluginRepository pluginRepository,
+        IAgentPluginRepository agentPluginRepository)
     {
         _agentRepository = agentRepository;
+        _pluginRepository = pluginRepository;
+        _agentPluginRepository = agentPluginRepository;
     }
 
     public async Task<bool> Handle(AddPluginToAgentCommand request, CancellationToken cancellationToken)
@@ -23,13 +30,32 @@ public class AddPluginToAgentHandler : IRequestHandler<AddPluginToAgentCommand, 
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
             ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
 
-        // TODO: 實作實際的 Plugin 添加邏輯
-        // 需要:
-        // 1. 驗證 Plugin 存在
-        // 2. 檢查是否已經添加過
-        // 3. 建立 AgentPlugin 關聯
-        // 4. 儲存到資料庫
-        // 目前返回 false 作為骨架實作
-        return await Task.FromResult(false);
+        // 驗證 Plugin 存在
+        var plugin = await _pluginRepository.GetByIdAsync(request.PluginId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Plugin with ID {request.PluginId} not found");
+
+        // 檢查是否已經添加過
+        var exists = await _agentPluginRepository.ExistsAsync(
+            request.AgentId,
+            request.PluginId,
+            cancellationToken);
+
+        if (exists)
+        {
+            throw new InvalidOperationException($"Plugin {plugin.Name} is already added to this agent");
+        }
+
+        // 建立 AgentPlugin 關聯
+        var agentPlugin = AgentPlugin.Create(
+            agentId: request.AgentId,
+            pluginId: request.PluginId,
+            addedBy: request.UserId,
+            executionOrder: request.ExecutionOrder,
+            customConfiguration: request.CustomConfiguration);
+
+        // 儲存到資料庫
+        await _agentPluginRepository.AddAsync(agentPlugin, cancellationToken);
+
+        return true;
     }
 }

@@ -6,15 +6,21 @@ namespace AIAgentPlatform.Application.Agents.Handlers;
 
 /// <summary>
 /// 處理更新 Agent Plugin 設定
-/// NOTE: 目前為骨架實作,實際的 Plugin 更新邏輯需在後續階段完善
 /// </summary>
 public class UpdateAgentPluginHandler : IRequestHandler<UpdateAgentPluginCommand, bool>
 {
     private readonly IAgentRepository _agentRepository;
+    private readonly IPluginRepository _pluginRepository;
+    private readonly IAgentPluginRepository _agentPluginRepository;
 
-    public UpdateAgentPluginHandler(IAgentRepository agentRepository)
+    public UpdateAgentPluginHandler(
+        IAgentRepository agentRepository,
+        IPluginRepository pluginRepository,
+        IAgentPluginRepository agentPluginRepository)
     {
         _agentRepository = agentRepository;
+        _pluginRepository = pluginRepository;
+        _agentPluginRepository = agentPluginRepository;
     }
 
     public async Task<bool> Handle(UpdateAgentPluginCommand request, CancellationToken cancellationToken)
@@ -23,12 +29,30 @@ public class UpdateAgentPluginHandler : IRequestHandler<UpdateAgentPluginCommand
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
             ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
 
-        // TODO: 實作實際的 Plugin 更新邏輯
-        // 需要:
-        // 1. 查詢 AgentPlugin 關聯
-        // 2. 更新配置 (IsEnabled, ExecutionOrder, CustomConfiguration)
-        // 3. 儲存到資料庫
-        // 目前返回 false 作為骨架實作
-        return await Task.FromResult(false);
+        // 驗證 Plugin 存在
+        var plugin = await _pluginRepository.GetByIdAsync(request.PluginId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Plugin with ID {request.PluginId} not found");
+
+        // 查詢 AgentPlugin 關聯
+        var agentPlugin = await _agentPluginRepository.GetByAgentAndPluginAsync(
+            request.AgentId,
+            request.PluginId,
+            cancellationToken);
+
+        if (agentPlugin == null)
+        {
+            throw new InvalidOperationException($"Plugin {plugin.Name} is not added to this agent");
+        }
+
+        // 更新配置
+        agentPlugin.UpdateConfiguration(
+            isEnabled: request.IsEnabled,
+            executionOrder: request.ExecutionOrder,
+            customConfiguration: request.CustomConfiguration);
+
+        // 儲存到資料庫
+        await _agentPluginRepository.UpdateAsync(agentPlugin, cancellationToken);
+
+        return true;
     }
 }

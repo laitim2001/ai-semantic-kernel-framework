@@ -7,15 +7,18 @@ namespace AIAgentPlatform.Application.Agents.Handlers;
 
 /// <summary>
 /// 處理 Agent 版本歷史查詢
-/// NOTE: 目前為骨架實作,實際的 AgentVersion 實體和資料庫結構需在後續階段完善
 /// </summary>
 public class GetAgentVersionHistoryHandler : IRequestHandler<GetAgentVersionHistory, List<AgentVersionDto>>
 {
     private readonly IAgentRepository _agentRepository;
+    private readonly IAgentVersionRepository _versionRepository;
 
-    public GetAgentVersionHistoryHandler(IAgentRepository agentRepository)
+    public GetAgentVersionHistoryHandler(
+        IAgentRepository agentRepository,
+        IAgentVersionRepository versionRepository)
     {
         _agentRepository = agentRepository;
+        _versionRepository = versionRepository;
     }
 
     public async Task<List<AgentVersionDto>> Handle(GetAgentVersionHistory request, CancellationToken cancellationToken)
@@ -24,9 +27,25 @@ public class GetAgentVersionHistoryHandler : IRequestHandler<GetAgentVersionHist
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
             ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
 
-        // TODO: 實作實際的版本歷史查詢
-        // 需要新增 AgentVersion 實體和對應的 DbSet
-        // 目前返回空列表作為骨架實作
-        return new List<AgentVersionDto>();
+        // 查詢版本歷史
+        var versions = await _versionRepository.GetByAgentIdAsync(
+            request.AgentId,
+            request.Skip,
+            request.Take,
+            cancellationToken);
+
+        // 轉換為 DTO
+        return versions.Select(v => new AgentVersionDto
+        {
+            Id = v.Id,
+            AgentId = v.AgentId,
+            Version = v.Version,
+            ChangeDescription = v.ChangeDescription,
+            ChangeType = v.ChangeType.Value,
+            ConfigurationSnapshot = v.ConfigurationSnapshot,
+            CreatedBy = v.CreatedBy,
+            CreatedAt = v.CreatedAt,
+            IsCurrent = v.IsCurrent
+        }).ToList();
     }
 }

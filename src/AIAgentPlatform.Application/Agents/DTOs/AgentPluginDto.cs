@@ -21,6 +21,26 @@ public class AgentPluginDto
     public PluginDto Plugin { get; set; } = new();
 
     /// <summary>
+    /// Plugin Name
+    /// </summary>
+    public string PluginName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Plugin Description
+    /// </summary>
+    public string? PluginDescription { get; set; }
+
+    /// <summary>
+    /// Plugin Type
+    /// </summary>
+    public string PluginType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Plugin Version
+    /// </summary>
+    public string PluginVersion { get; set; } = string.Empty;
+
+    /// <summary>
     /// 是否已啟用
     /// </summary>
     public bool IsEnabled { get; set; }

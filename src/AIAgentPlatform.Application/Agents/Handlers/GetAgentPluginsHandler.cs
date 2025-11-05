@@ -7,15 +7,18 @@ namespace AIAgentPlatform.Application.Agents.Handlers;
 
 /// <summary>
 /// 處理 Agent Plugins 查詢
-/// NOTE: 目前為骨架實作,實際的 Plugin 實體和資料庫結構需在後續階段完善
 /// </summary>
 public class GetAgentPluginsHandler : IRequestHandler<GetAgentPlugins, List<AgentPluginDto>>
 {
     private readonly IAgentRepository _agentRepository;
+    private readonly IAgentPluginRepository _agentPluginRepository;
 
-    public GetAgentPluginsHandler(IAgentRepository agentRepository)
+    public GetAgentPluginsHandler(
+        IAgentRepository agentRepository,
+        IAgentPluginRepository agentPluginRepository)
     {
         _agentRepository = agentRepository;
+        _agentPluginRepository = agentPluginRepository;
     }
 
     public async Task<List<AgentPluginDto>> Handle(GetAgentPlugins request, CancellationToken cancellationToken)
@@ -24,9 +27,25 @@ public class GetAgentPluginsHandler : IRequestHandler<GetAgentPlugins, List<Agen
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
             ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
 
-        // TODO: 實作實際的 Plugin 查詢邏輯
-        // 需要新增 Plugin 和 AgentPlugin 實體及對應的 DbSet
-        // 目前返回空列表作為骨架實作
-        return new List<AgentPluginDto>();
+        // 查詢 Agent 的所有 Plugins
+        var agentPlugins = await _agentPluginRepository.GetByAgentIdAsync(
+            request.AgentId,
+            request.EnabledOnly,
+            cancellationToken);
+
+        // 轉換為 DTO
+        return agentPlugins.Select(ap => new AgentPluginDto
+        {
+            AgentId = ap.AgentId,
+            PluginId = ap.PluginId,
+            PluginName = ap.Plugin?.Name ?? string.Empty,
+            PluginDescription = ap.Plugin?.Description,
+            PluginType = ap.Plugin?.Type.Value ?? string.Empty,
+            PluginVersion = ap.Plugin?.Version ?? string.Empty,
+            IsEnabled = ap.IsEnabled,
+            ExecutionOrder = ap.ExecutionOrder,
+            CustomConfiguration = ap.CustomConfiguration,
+            AddedAt = ap.AddedAt
+        }).ToList();
     }
 }
