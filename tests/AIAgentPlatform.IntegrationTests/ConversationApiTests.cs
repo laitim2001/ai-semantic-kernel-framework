@@ -50,7 +50,7 @@ public class ConversationApiTests : IClassFixture<WebApplicationFactoryHelper>
         conversation.AgentId.Should().Be(agent.Id);
         conversation.UserId.Should().Be(userId);
         conversation.Title.Should().Be("Test Conversation");
-        conversation.Status.Should().Be("Active");
+        conversation.Status.Should().Be("active");
         conversation.MessageCount.Should().Be(0);
     }
 
