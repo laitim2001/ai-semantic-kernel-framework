@@ -1,6 +1,9 @@
+using AIAgentPlatform.Application.AgentExecutions.Services;
 using AIAgentPlatform.Domain.Interfaces;
 using AIAgentPlatform.Infrastructure.Data;
 using AIAgentPlatform.Infrastructure.Data.Repositories;
+using AIAgentPlatform.Infrastructure.Services.AgentExecution;
+using AIAgentPlatform.Infrastructure.Services.SemanticKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +38,10 @@ public static class DependencyInjection
         services.AddScoped<IPluginRepository, PluginRepository>();
         services.AddScoped<IAgentPluginRepository, AgentPluginRepository>();
         services.AddScoped<IAgentVersionRepository, AgentVersionRepository>();
+
+        // Register services
+        services.AddScoped<ISemanticKernelService, SemanticKernelService>();
+        services.AddScoped<IAgentExecutionService, AgentExecutionService>();
 
         return services;
     }

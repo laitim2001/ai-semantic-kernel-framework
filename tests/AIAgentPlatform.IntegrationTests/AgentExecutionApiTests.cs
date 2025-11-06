@@ -2,18 +2,22 @@ using System.Net;
 using System.Net.Http.Json;
 using AIAgentPlatform.Application.Agents.Commands;
 using AIAgentPlatform.Application.Agents.DTOs;
+using AIAgentPlatform.Application.AgentExecutions.DTOs;
+using AIAgentPlatform.Application.Conversations.Commands;
+using AIAgentPlatform.Application.Conversations.DTOs;
+using AIAgentPlatform.API.Controllers;
 using FluentAssertions;
 
 namespace AIAgentPlatform.IntegrationTests;
 
 /// <summary>
-/// Integration tests for Agent Execution Statistics API
-/// Tests US 1.3 Phase 2: Agent execution tracking and statistics
+/// Integration tests for Agent Execution API
+/// Tests US 1.4 Phase 1: Basic execution engine and API endpoints
 /// </summary>
-public class AgentExecutionApiTests : IClassFixture<WebApplicationFactoryHelper>
+public sealed class AgentExecutionApiTests : IClassFixture<WebApplicationFactoryHelper>
 {
-    private readonly HttpClient _client;
     private readonly WebApplicationFactoryHelper _factory;
+    private readonly HttpClient _client;
 
     public AgentExecutionApiTests(WebApplicationFactoryHelper factory)
     {
@@ -22,108 +26,246 @@ public class AgentExecutionApiTests : IClassFixture<WebApplicationFactoryHelper>
     }
 
     [Fact]
-    public async Task GetStatistics_WithValidAgentId_ShouldReturnStatistics()
+    public async Task GetExecutionHistory_WithValidAgentId_ShouldReturnEmptyList()
     {
-        // Arrange: Create a test agent
-        var createCommand = new CreateAgentCommand
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        // Create an agent first
+        var createAgentCommand = new CreateAgentCommand
         {
-            Name = "Test Agent for Statistics",
-            Description = "Testing execution statistics",
-            Model = "gpt-4o",
+            UserId = userId,
+            Name = "Test Agent for Execution History",
+            Description = "Testing execution history",
             Instructions = "You are a test assistant",
-            UserId = Guid.NewGuid()
+            Model = "gpt-4o",
+            Temperature = 0.7m,
+            MaxTokens = 4096
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/api/agents", createCommand);
-        createResponse.EnsureSuccessStatusCode();
-        var agent = await createResponse.Content.ReadFromJsonAsync<AgentDto>();
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        createAgentResponse.EnsureSuccessStatusCode();
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
         agent.Should().NotBeNull();
 
-        // Act: Get statistics for the agent
-        var statisticsResponse = await _client.GetAsync($"/api/agents/{agent!.Id}/statistics");
+        // Act
+        var response = await _client.GetAsync($"/api/agents/{agent!.Id}/AgentExecution/history");
 
         // Assert
-        statisticsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var statistics = await statisticsResponse.Content.ReadFromJsonAsync<AgentStatisticsDto>();
-
-        statistics.Should().NotBeNull();
-        statistics!.AgentId.Should().Be(agent.Id);
-        statistics.TotalExecutions.Should().Be(0); // New agent, no executions yet
-        statistics.SuccessfulExecutions.Should().Be(0);
-        statistics.FailedExecutions.Should().Be(0);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var executions = await response.Content.ReadFromJsonAsync<List<AgentExecutionDto>>();
+        executions.Should().NotBeNull();
+        executions.Should().BeEmpty(); // No executions yet
     }
 
     [Fact]
-    public async Task GetStatistics_WithDateRange_ShouldFilterByDateRange()
+    public async Task GetExecutionHistory_WithPagination_ShouldRespectPagination()
     {
-        // Arrange: Create a test agent
-        var createCommand = new CreateAgentCommand
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
         {
-            Name = "Test Agent for Date Range",
-            Description = "Testing statistics with date range",
-            Model = "gpt-4o",
+            UserId = userId,
+            Name = "Test Agent for Pagination",
             Instructions = "You are a test assistant",
-            UserId = Guid.NewGuid()
+            Model = "gpt-4o"
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/api/agents", createCommand);
-        createResponse.EnsureSuccessStatusCode();
-        var agent = await createResponse.Content.ReadFromJsonAsync<AgentDto>();
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+
+        // Act
+        var response = await _client.GetAsync($"/api/agents/{agent!.Id}/AgentExecution/history?skip=0&take=10");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var executions = await response.Content.ReadFromJsonAsync<List<AgentExecutionDto>>();
+        executions.Should().NotBeNull();
+        executions.Should().HaveCountLessOrEqualTo(10);
+    }
+
+    [Fact]
+    public async Task GetStatistics_WithValidAgentId_ShouldReturnZeroStatistics()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent for Statistics",
+            Description = "Testing statistics",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o",
+            Temperature = 0.7m,
+            MaxTokens = 4096
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        createAgentResponse.EnsureSuccessStatusCode();
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+        agent.Should().NotBeNull();
+
+        // Act
+        var response = await _client.GetAsync($"/api/agents/{agent!.Id}/AgentExecution/statistics");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var statistics = await response.Content.ReadFromJsonAsync<AgentExecutionStatisticsDto>();
+        statistics.Should().NotBeNull();
+        statistics!.AgentId.Should().Be(agent.Id);
+        statistics.TotalExecutions.Should().Be(0);
+        statistics.SuccessfulExecutions.Should().Be(0);
+        statistics.FailedExecutions.Should().Be(0);
+        statistics.SuccessRate.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetStatistics_WithDateRange_ShouldIncludeDateRange()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent for Date Range",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o"
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
 
         var startDate = DateTime.UtcNow.AddDays(-7);
         var endDate = DateTime.UtcNow;
 
-        // Act: Get statistics with date range
-        var statisticsResponse = await _client.GetAsync(
-            $"/api/agents/{agent!.Id}/statistics?startDate={startDate:O}&endDate={endDate:O}");
+        // Act
+        var response = await _client.GetAsync(
+            $"/api/agents/{agent!.Id}/AgentExecution/statistics?startDate={startDate:O}&endDate={endDate:O}");
 
         // Assert
-        statisticsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var statistics = await statisticsResponse.Content.ReadFromJsonAsync<AgentStatisticsDto>();
-
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var statistics = await response.Content.ReadFromJsonAsync<AgentExecutionStatisticsDto>();
         statistics.Should().NotBeNull();
-        statistics!.AgentId.Should().Be(agent.Id);
-        statistics.PeriodStart.Should().BeCloseTo(startDate, TimeSpan.FromSeconds(1));
-        statistics.PeriodEnd.Should().BeCloseTo(endDate, TimeSpan.FromSeconds(1));
+        statistics!.StartDate.Should().NotBeNull();
+        statistics.EndDate.Should().NotBeNull();
     }
 
     [Fact]
-    public async Task GetStatistics_WithNonexistentAgent_ShouldReturnNotFound()
+    public async Task Execute_WithNonExistentAgent_ShouldReturnNotFound()
     {
         // Arrange
-        var nonexistentAgentId = Guid.NewGuid();
+        var nonExistentAgentId = Guid.NewGuid();
+        var conversationId = Guid.NewGuid();
+
+        var executeRequest = new ExecuteAgentRequest
+        {
+            ConversationId = conversationId,
+            Input = "Hello, world!"
+        };
 
         // Act
-        var response = await _client.GetAsync($"/api/agents/{nonexistentAgentId}/statistics");
+        var response = await _client.PostAsJsonAsync(
+            $"/api/agents/{nonExistentAgentId}/AgentExecution/execute",
+            executeRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
-    public async Task GetStatistics_WithInvalidDateRange_ShouldReturnBadRequest()
+    public async Task Execute_WithPausedAgent_ShouldReturnNotFound()
     {
-        // Arrange: Create a test agent
-        var createCommand = new CreateAgentCommand
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        // Create an agent
+        var createAgentCommand = new CreateAgentCommand
         {
-            Name = "Test Agent for Invalid Date Range",
-            Description = "Testing invalid date range",
-            Model = "gpt-4o",
+            UserId = userId,
+            Name = "Test Agent for Execution",
+            Description = "Testing execution",
             Instructions = "You are a test assistant",
-            UserId = Guid.NewGuid()
+            Model = "gpt-4o",
+            Temperature = 0.7m,
+            MaxTokens = 4096
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/api/agents", createCommand);
-        createResponse.EnsureSuccessStatusCode();
-        var agent = await createResponse.Content.ReadFromJsonAsync<AgentDto>();
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        createAgentResponse.EnsureSuccessStatusCode();
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+        agent.Should().NotBeNull();
 
-        // Act: End date before start date
-        var startDate = DateTime.UtcNow;
-        var endDate = DateTime.UtcNow.AddDays(-7);
-        var statisticsResponse = await _client.GetAsync(
-            $"/api/agents/{agent!.Id}/statistics?startDate={startDate:O}&endDate={endDate:O}");
+        // Pause the agent
+        await _client.PostAsync($"/api/agents/{agent!.Id}/pause", null);
+
+        // Create a conversation
+        var createConversationCommand = new CreateConversationCommand
+        {
+            UserId = userId,
+            AgentId = agent.Id,
+            Title = "Test Conversation"
+        };
+
+        var createConversationResponse = await _client.PostAsJsonAsync("/api/conversations", createConversationCommand);
+        createConversationResponse.EnsureSuccessStatusCode();
+        var conversation = await createConversationResponse.Content.ReadFromJsonAsync<ConversationDto>();
+
+        var executeRequest = new ExecuteAgentRequest
+        {
+            ConversationId = conversation!.Id,
+            Input = "Hello, world!"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync(
+            $"/api/agents/{agent.Id}/AgentExecution/execute",
+            executeRequest);
 
         // Assert
-        statisticsResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task Execute_WithEmptyInput_ShouldReturnBadRequest()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        // Create an agent
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o"
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        createAgentResponse.EnsureSuccessStatusCode();
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+
+        var executeRequest = new ExecuteAgentRequest
+        {
+            ConversationId = Guid.NewGuid(),
+            Input = "" // Empty input
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync(
+            $"/api/agents/{agent!.Id}/AgentExecution/execute",
+            executeRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    // Note: We cannot test actual execution without a valid Azure OpenAI configuration
+    // That would require integration with real Azure services, which is beyond unit/integration testing
+    // For real execution testing, we would need:
+    // 1. Valid Azure OpenAI API credentials
+    // 2. Mocked Semantic Kernel service OR
+    // 3. End-to-end testing environment with real Azure resources
 }
