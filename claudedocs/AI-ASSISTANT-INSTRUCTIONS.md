@@ -6,11 +6,187 @@
 
 ## 📋 目錄
 
-1. [進度報告更新指令](#進度報告更新指令)
-2. [Git 提交和推送指令](#git-提交和推送指令)
-3. [Session 摘要生成指令](#session-摘要生成指令)
-4. [文檔同步檢查指令](#文檔同步檢查指令)
-5. [完整工作流程指令](#完整工作流程指令)
+1. [Instructions 優先級矩陣](#instructions-優先級矩陣) ⭐ NEW
+2. [進度報告更新指令](#進度報告更新指令)
+3. [Git 提交和推送指令](#git-提交和推送指令)
+4. [Session 摘要生成指令](#session-摘要生成指令)
+5. [文檔同步檢查指令](#文檔同步檢查指令)
+6. [完整工作流程指令](#完整工作流程指令)
+7. [重要事件自動觸發規則](#重要事件自動觸發規則) ⭐ NEW
+8. [Session 結束強制檢查清單](#session-結束強制檢查清單) ⭐ NEW
+
+---
+
+## 🎯 Instructions 優先級矩陣
+
+本章節定義所有 Instructions 的優先級和執行規則,幫助 AI 判斷哪些操作是關鍵的,哪些可以延後。
+
+### 優先級定義
+
+| 優先級 | 符號 | 定義 | AI 行為 |
+|-------|------|------|---------|
+| **Critical** | 🔴 | 必須執行,不可跳過 | AI 主動檢測並自動執行,無需用戶確認 (除非用戶明確要求跳過) |
+| **High Priority** | 🟡 | 強烈建議,可協商跳過 | AI 主動建議並詢問用戶,尊重用戶決定 |
+| **Medium Priority** | 🟢 | 建議執行,可延後 | AI 可以提及,但不強制建議,完全由用戶決定 |
+
+---
+
+### Instructions 優先級表
+
+| Instruction | 名稱 | 優先級 | 觸發條件 | 執行規則 |
+|------------|------|--------|---------|---------|
+| **Instruction 1** | 更新 PROJECT-STATUS-REPORT.md | 🔴 Critical | User Story 完成、集成測試完成、Phase 完成 | AI 主動執行 |
+| **Instruction 2** | 生成 Feature 完成報告 | 🟢 Medium | User Story 完成、Feature 實作完成 | 用戶請求時執行 |
+| **Instruction 3** | Git 工作流程 (提交和推送) | 🔴 Critical | 代碼變更完成、測試通過 | 用戶請求時執行,但必須嚴格驗證 |
+| **Instruction 4** | 創建 Pull Request | 🟢 Medium | Feature 完成、準備 Code Review | 用戶請求時執行 |
+| **Instruction 5** | 生成 Session 摘要 | 🟡 High | Session 時長 >1h、重要工作完成 | AI 建議執行,詢問用戶 |
+| **Instruction 6** | 文檔一致性檢查 | 🟡 High | Instruction 1 執行後、Session 結束、PR 創建前 | AI 在強制時機自動執行 |
+| **Instruction 7** | 完整結束流程 | 🟡 High | Feature 開發完整結束 | 用戶請求時執行 |
+| **Instruction 8** | 快速同步 | 🟢 Medium | 緊急情況、時間緊迫 | 用戶明確請求時執行 |
+| **Instruction 9** | 重要事件自動觸發規則 | 🔴 Critical | 檢測到 Critical/High Events | AI 自動監測和執行 |
+| **Instruction 10** | Session 結束檢查清單 | 🔴 Critical | Session 結束信號檢測 | AI 自動執行檢查 |
+
+---
+
+### 執行規則詳解
+
+#### Rule 1: Critical Priority Instructions (🔴)
+
+**適用 Instructions**: 1, 3, 9, 10
+
+**AI 行為**:
+- 主動監測觸發條件
+- 檢測到條件滿足時,立即告知用戶
+- 直接執行操作 (無需用戶確認),除非用戶明確要求暫緩
+- 記錄執行結果並驗證成功
+
+**範例**:
+```
+🔴 檢測到 Critical Event: 集成測試完成 (25/26 passed)
+執行 Instruction 1 更新狀態報告...
+✅ PROJECT-STATUS-REPORT.md 已更新到 v6.0.0
+執行 Instruction 6 驗證文檔一致性...
+✅ 驗證通過,文檔同步正確
+```
+
+**用戶覆蓋**:
+用戶可以說 "跳過文檔更新,先提交代碼",AI 會記錄並在下次 Session 提醒補充。
+
+---
+
+#### Rule 2: High Priority Instructions (🟡)
+
+**適用 Instructions**: 5, 6 (特定時機), 7
+
+**AI 行為**:
+- 監測觸發條件或時機
+- 檢測到時機時,告知用戶並說明理由
+- 列出建議執行的操作
+- 詢問用戶是否執行
+- 根據用戶回應執行或記錄延後原因
+
+**範例**:
+```
+🟡 建議執行 Session 摘要
+檢測到: Session 時長 3 小時,完成重要工作 (US 1.2 集成測試)
+建議操作: 執行 Instruction 5 創建 Session 摘要
+
+是否現在執行? (y/n)
+如果暫不執行,我會在 Session 結束檢查時再次提醒。
+```
+
+---
+
+#### Rule 3: Medium Priority Instructions (🟢)
+
+**適用 Instructions**: 2, 4, 8
+
+**AI 行為**:
+- 僅在用戶明確請求時執行
+- 可以在適當時機簡單提及可選操作 (不強制)
+- 完全尊重用戶決定
+- 不主動監測或建議
+
+**範例**:
+```
+✅ 變更已提交並推送到 GitHub。
+
+(可選) 你可以執行 Instruction 4 創建 PR 進行 Code Review,
+或稍後手動創建。
+```
+
+---
+
+### 優先級覆蓋規則
+
+用戶可以臨時調整優先級,AI 應該尊重並記錄:
+
+#### 用戶降低優先級:
+- **用戶**: "跳過文檔更新,先提交代碼"
+- **AI 行為**:
+  - 允許跳過 Instruction 1 (通常為 Critical)
+  - 記錄跳過原因和時間
+  - 在下次 Session 或 Session 結束時提醒補充
+
+#### 用戶提升優先級:
+- **用戶**: "完整檢查,不要遺漏任何步驟"
+- **AI 行為**:
+  - 將所有 Medium 提升為 High
+  - 將所有 High 提升為 Critical
+  - 執行所有可選的驗證和檢查
+
+#### 用戶加速模式:
+- **用戶**: "這是緊急修復,快速流程"
+- **AI 行為**:
+  - 使用 Instruction 8 (快速同步) 而非 Instruction 7
+  - 僅執行 Critical 操作
+  - 記錄跳過的 High/Medium 操作供後續補充
+
+---
+
+### 優先級決策流程
+
+```
+AI 檢測到事件/完成任務
+    ↓
+查詢 Instructions 優先級表
+    ↓
+判斷優先級
+    ↓
+    ├─ 🔴 Critical → 立即執行,告知用戶結果
+    ├─ 🟡 High → 建議執行,詢問用戶
+    └─ 🟢 Medium → 僅提及,不強制
+
+用戶覆蓋請求?
+    ├─ 是 → 記錄覆蓋,按用戶指示執行
+    └─ 否 → 按優先級規則執行
+
+執行完成 → 記錄結果 → 繼續下一個任務
+```
+
+---
+
+### 優先級記錄與追蹤
+
+AI 應該記錄以下資訊:
+- 跳過的 Critical 操作 (記錄原因和補救計劃)
+- 延後的 High 操作 (記錄在 Session 摘要或 Todo List)
+- 用戶覆蓋的優先級決策 (記錄原因)
+
+**記錄範例**:
+```markdown
+## Session X 優先級覆蓋記錄
+
+1. **跳過 Instruction 1 (Critical)**
+   - 時間: 2025-11-06 14:30 UTC
+   - 原因: 用戶要求 "先提交代碼,稍後更新文檔"
+   - 補救計劃: 在 Session 結束前補充執行
+
+2. **延後 Instruction 5 (High)**
+   - 時間: 2025-11-06 16:00 UTC
+   - 原因: 用戶時間緊迫
+   - 補救計劃: 下次 Session 開始時補充
+```
 
 ---
 
@@ -130,6 +306,8 @@
    dotnet test "C:\AI Semantic Kernel\src\AIAgentPlatform.sln" --no-build --verbosity normal
    ```
 
+   **如果測試失敗,執行測試分類流程** (詳見下方 "測試失敗處理流程")
+
 4. 暫存變更:
    ```bash
    git add .
@@ -182,8 +360,218 @@
 
 8. 顯示推送結果和分支 URL
 
+---
+
+### 測試失敗處理流程 (更新)
+
+當步驟 3 的測試執行失敗時,AI 必須按照以下流程進行分類和處理:
+
+#### 步驟 1: 分析測試結果
+
+```bash
+# AI 檢查測試輸出,識別失敗的測試名稱和數量
+# 範例輸出:
+#   Failed: CreateAgent_WithValidData_ShouldSucceed
+#   Failed: CreateConversation_WithValidData_ShouldReturnCreatedConversation
+#   Passed: 95/97
+```
+
+#### 步驟 2: 測試分類
+
+AI 必須將失敗測試分為以下三類:
+
+##### 🔴 Critical Failures (核心功能失敗)
+
+**定義**:
+- 基本 CRUD 操作測試失敗 (Create, Read, Update, Delete)
+- 新增功能的核心測試失敗
+- 導致系統無法運行的測試失敗
+- 迴歸測試失敗 (之前通過,本次失敗)
+
+**範例**:
+- CreateAgent_WithValidData_ShouldSucceed
+- GetAgentById_WithValidId_ShouldReturnAgent
+- 新增的 AgentExecutionService 核心功能測試失敗
+
+**AI 處理**:
+```
+❌ Critical 測試失敗: CreateAgent_WithValidData_ShouldSucceed
+
+這是核心功能測試,必須停止流程,不允許提交代碼。
+
+建議操作:
+1. 檢查測試失敗原因 (查看錯誤訊息)
+2. 修復問題
+3. 重新執行測試
+4. 確認通過後再繼續
+
+是否要查看詳細錯誤訊息? (y/n)
+```
+
+**決策**: STOP - 不允許繼續提交
+
+---
+
+##### 🟡 Known Issue Failures (已知問題)
+
+**定義**:
+- PROJECT-STATUS-REPORT.md 中已記錄的已知測試失敗
+- 非本次 Session 引入的問題
+- 不影響新功能的失敗測試
+- 有明確記錄的待修復問題
+
+**範例**:
+- CreateConversation_WithValidData (Session 5 發現,已記錄,優先級: 中)
+
+**AI 處理**:
+```
+⚠️ 測試失敗: CreateConversation_WithValidData_ShouldSucceed
+
+檢查結果: 這是已知問題 ✅
+- 發現時間: Session 5 (2025-11-06)
+- 記錄位置: PROJECT-STATUS-REPORT.md
+- 狀態: 待修復
+- 優先級: 中
+- 影響範圍: Conversation API 創建操作
+
+本次變更: US 1.3 Phase 4 (AgentPlugin API)
+影響分析: 此失敗不影響本次變更的功能
+
+是否繼續提交? (建議: 是,但需在提交訊息中標注已知問題)
+```
+
+**決策**: CONTINUE WITH ANNOTATION - 可以繼續,但提交訊息必須包含:
+```
+測試結果:
+- Build: ✅ Success
+- Tests: 96/97 (99%)
+- Known Issue: CreateConversation_WithValidData (US 1.2, 待修復)
+```
+
+---
+
+##### 🟢 Edge Case Failures (邊界情況失敗)
+
+**定義**:
+- 邊界條件或異常情況測試失敗
+- 不影響主要用戶流程的測試
+- 可以後續改進的非關鍵測試
+- 極端數據量或極端參數的測試
+
+**範例**:
+- GetAgent_WithExtremelyLongDescription (描述長度 >10000 字元)
+- CreateAgent_With1000Plugins (極端數量測試)
+- GetAgent_WithUnicodeEmojis (特殊字元處理)
+
+**AI 處理**:
+```
+⚠️ Edge Case 測試失敗: GetAgent_WithExtremelyLongDescription
+
+分析: 這是邊界情況測試,不影響正常使用場景。
+
+測試詳情:
+- 測試場景: Description 長度 >10000 字元
+- 一般使用: Description 通常 <1000 字元
+- 影響: 極少數極端情況
+
+建議操作:
+1. 記錄為已知改進項 (不是 Bug)
+2. 可以繼續提交
+3. 創建 Issue 或 TODO 追蹤改進
+
+是否繼續提交? (建議: 是,記錄改進項)
+```
+
+**決策**: CONTINUE WITH NOTE - 可以繼續,記錄為改進項
+
+---
+
+#### 步驟 3: 執行決策
+
+**決策矩陣**:
+
+```yaml
+Critical Failures:
+  action: STOP
+  behavior: 不允許提交,必須修復
+  exception: 無 (Critical 必須修復)
+
+Known Issue Failures:
+  action: CONTINUE WITH ANNOTATION
+  behavior: 詢問用戶,建議繼續但標注已知問題
+  requirement: 提交訊息必須標注已知問題
+
+Edge Case Failures:
+  action: CONTINUE WITH NOTE
+  behavior: 詢問用戶,建議繼續並記錄改進項
+  requirement: 記錄到 PROJECT-STATUS-REPORT.md 的改進清單或創建 Issue
+```
+
+---
+
+#### 步驟 4: 文檔更新規則
+
+**重要**: 無論測試是否通過,AI 都必須更新 PROJECT-STATUS-REPORT.md
+
+**測試通過時**:
+- 記錄測試統計 (passed/total)
+- 更新測試覆蓋率
+
+**測試失敗時** (Known Issue 或 Edge Case):
+- 記錄失敗測試名稱和詳情
+- 記錄失敗原因和分類
+- 添加到已知問題清單或改進清單
+- 標注優先級
+
+**範例**:
+```markdown
+### 已知問題
+
+#### 🟡 US 1.2 已知問題 (1 個)
+1. **CreateConversation_WithValidData_ShouldSucceed**
+   - 狀態: 測試失敗
+   - 發現時間: Session 5 (2025-11-06)
+   - 優先級: 中
+   - 影響: Conversation API 創建操作
+   - 計劃: Sprint 2 修復
+
+#### 🟢 改進清單 (2 個)
+1. **GetAgent_WithExtremelyLongDescription**
+   - 類型: 邊界情況改進
+   - 優先級: 低
+   - 計劃: Sprint 3 或後續 Sprint
+```
+
+---
+
+#### 步驟 5: 提交訊息標注
+
+**測試通過**:
+```
+測試結果:
+- Build: ✅ Success
+- Tests: 97/97 (100%) ✅
+```
+
+**Known Issue存在**:
+```
+測試結果:
+- Build: ✅ Success
+- Tests: 96/97 (99%)
+- Known Issue: CreateConversation_WithValidData (US 1.2, 待修復)
+```
+
+**Edge Case失敗**:
+```
+測試結果:
+- Build: ✅ Success
+- Tests: 96/97 (99%)
+- Edge Case: GetAgent_WithExtremelyLongDescription (記錄為改進項)
+```
+
+---
+
 **錯誤處理**:
-- 如果測試失敗,停止流程並報告失敗測試
 - 如果 push 失敗,檢查是否需要 pull --rebase
 - 如果有衝突,報告衝突檔案並等待用戶處理
 ```
@@ -391,63 +779,215 @@
 
 ## 🔍 文檔同步檢查指令
 
-### Instruction 6: 檢查文檔一致性
+### Instruction 6: 檢查文檔一致性 (強制驗證)
 
 ```
 請執行文檔一致性檢查,確保所有文檔同步:
 
+**執行時機** (更新):
+
+#### 🔴 強制執行時機 (必須執行,不可跳過):
+1. **執行 Instruction 1 之後**
+   - 驗證 PROJECT-STATUS-REPORT.md 更新正確
+   - 確認所有關鍵資訊已同步
+
+2. **執行 Instruction 7 的 Phase 2 結束時**
+   - 驗證所有文檔已更新
+   - 確認無遺漏
+
+3. **執行 Instruction 10 (Session 結束檢查) 時**
+   - 最終驗證文檔一致性
+   - 確保 Session 結束時文檔同步
+
+4. **創建 PR 之前 (Instruction 4)**
+   - 確保 PR 包含的變更已反映在文檔中
+   - 避免 PR 中代碼與文檔不一致
+
+#### 🟡 建議執行時機:
+- Sprint 結束前 (總體檢查)
+- 每日工作結束時 (可選)
+- 重要里程碑完成後 (Phase 完成, US 完成)
+
+---
+
 **檢查項目**:
 
-1. **User Story 文檔**:
-   - 檢查 docs/user-stories/US-*.md 的狀態欄位
-   - 與 PROJECT-STATUS-REPORT.md 的進度比對
-   - 報告不一致的地方
+### 驗證 1: PROJECT-STATUS-REPORT.md 完整性 (Critical)
 
-2. **Sprint 計劃文檔**:
-   - claudedocs/SPRINT-*-ROADMAP.md
-   - claudedocs/SPRINT-*-LAUNCH-CHECKLIST.md
-   - 確認 checklist 項目與實際完成進度一致
+```yaml
+檢查項目:
+  - [ ] 報告日期 = 當前日期 (UTC)
+  - [ ] 版本號正確遞增 (按規則: major.minor.patch)
+  - [ ] 所有完成的 User Stories 狀態為 ✅
+  - [ ] 所有進行中的 User Stories 狀態為 🟡
+  - [ ] 測試統計完整 (unit + integration)
+  - [ ] API 端點清單最新
+  - [ ] Session 歷史包含本次 Session (如適用)
+  - [ ] 已知問題清單最新
 
-3. **技術文檔**:
-   - docs/technical-implementation/*.md
-   - 檢查是否有新實作的功能需要更新文檔
-   - 報告缺少文檔的新功能
+驗證方法:
+  1. 讀取 PROJECT-STATUS-REPORT.md
+  2. 讀取 User Stories 文檔 (docs/user-stories/US-*.md)
+  3. 執行 git log 檢查最近提交 (可選)
+  4. 比對一致性
+```
 
-4. **測試文檔**:
-   - 檢查 tests/ 目錄下的測試檔案
-   - 統計測試覆蓋的功能模組
-   - 報告缺少測試的模組
+### 驗證 2: User Story 文檔一致性
 
-5. **README 文檔**:
-   - 檢查根目錄 README.md
-   - 檢查 docs/brief-README.md
-   - 確認功能清單是否為最新
+```yaml
+檢查項目:
+  - [ ] US 狀態與 PROJECT-STATUS-REPORT.md 一致
+  - [ ] Acceptance Criteria 完成度與實際實作一致
+  - [ ] 測試覆蓋記錄與實際測試一致
 
-**輸出格式**:
+報告格式:
+  - ✅ US 1.1: 狀態一致 (✅ 已完成)
+  - ✅ US 1.2: 狀態一致 (✅ 已完成)
+  - ⚠️ US 1.3 Phase 4: 缺少集成測試結果記錄
+```
+
+### 驗證 3: 測試文檔一致性
+
+```yaml
+檢查項目:
+  - [ ] 測試統計與實際測試文件一致
+  - [ ] 失敗測試已記錄在已知問題中
+  - [ ] 測試覆蓋率記錄準確
+
+執行方法 (可選,如時間允許):
+  1. 統計 tests/ 目錄下的測試文件 (使用 find 或 ls)
+  2. 比對 PROJECT-STATUS-REPORT.md 中的測試統計
+  3. 報告不一致項目
+```
+
+### 驗證 4: Sprint 計劃文檔 (可選)
+
+```yaml
+檢查項目:
+  - claudedocs/SPRINT-*-ROADMAP.md
+  - claudedocs/SPRINT-*-LAUNCH-CHECKLIST.md
+  - 確認 checklist 項目與實際完成進度一致
+```
+
+### 驗證 5: README 文檔 (可選)
+
+```yaml
+檢查項目:
+  - 根目錄 README.md
+  - docs/brief-README.md
+  - 確認功能清單是否為最新
+```
+
+---
+
+**輸出格式** (更新):
+
 ```markdown
 ## 📋 文檔一致性檢查報告
 
 **檢查時間**: YYYY-MM-DD HH:MM UTC
+**檢查範圍**: [列出檢查的文檔]
+**觸發原因**: [執行 Instruction 1 後 / Session 結束檢查 / PR 創建前]
 
-### ✅ 一致的文檔
-- [列出同步正確的文檔]
+---
 
-### ⚠️ 需要更新的文檔
-- **[文件路徑]**: [需要更新的內容描述]
-- **[文件路徑]**: [需要更新的內容描述]
+### ✅ 一致的文檔 (X/Y)
+- ✅ PROJECT-STATUS-REPORT.md: 版本號、報告日期
+- ✅ US 1.1: 狀態、測試覆蓋
+- ✅ US 1.2: 狀態 (但缺少集成測試詳情)
+- ✅ SPRINT-1-ROADMAP.md: Checklist 與進度一致
+- ✅ README.md: 功能清單最新
 
-### ❌ 缺失的文檔
+---
+
+### ⚠️ 需要更新的文檔 (X/Y)
+- ⚠️ **PROJECT-STATUS-REPORT.md**:
+  - 缺少 US 1.2 集成測試結果 (8 tests)
+  - 缺少 US 1.3 Phase 4 集成測試結果 (8 tests)
+  - 測試統計不完整 (只有 97 unit, 缺少 26 integration)
+  - 缺少 Session 5 歷史記錄
+
+- ⚠️ **US-1.2-conversation-crud.md**:
+  - Acceptance Criteria 狀態未更新 (測試覆蓋完成)
+
+---
+
+### ❌ 缺失的文檔 (X/Y)
+(如果有缺失的文檔)
 - **[建議檔名]**: [應該包含的內容描述]
 
-### 📝 更新建議
-1. [具體的更新建議 1]
-2. [具體的更新建議 2]
+---
+
+### 🔧 自動修復建議
+AI 可以自動修復以下問題:
+1. 更新 PROJECT-STATUS-REPORT.md (執行 Instruction 1)
+2. 更新 US 1.2 文檔的測試狀態
+
+是否執行自動修復? (y/n)
+
+---
+
+### 📝 手動修復建議
+以下需要用戶手動確認或決定:
+(如果有需要手動處理的項目)
+
+---
+
+### ✅ 驗證結論
+- **一致性得分**: XX% (X/Y 完全一致)
+- **Critical 問題**: X 個 (必須立即修復)
+- **Warning 問題**: X 個 (建議修復,可延後)
+- **建議操作**: [列出建議的下一步行動]
 ```
 
-**執行時機**:
-- 完成一個 Phase 後
-- 創建 PR 之前
-- Sprint 結束前
+---
+
+### 驗證失敗處理 (新增)
+
+#### 如果驗證發現 Critical 問題:
+
+**Critical 問題定義**:
+- PROJECT-STATUS-REPORT.md 報告日期過期 >1 天
+- 測試統計與實際結果差異 >10%
+- 有 User Story 完成但狀態未更新
+- 有重要功能實作但文檔缺失
+
+**處理邏輯**:
+1. AI 必須立即報告問題
+2. AI 必須建議修復方案
+3. 在用戶確認前,不允許執行後續操作 (如 git commit, PR creation)
+
+**範例**:
+```
+⚠️ 驗證失敗: 發現 Critical 問題
+- PROJECT-STATUS-REPORT.md 過期 2 天
+- 測試統計差異 21% (97 unit 缺少 26 integration)
+
+必須先修復這些問題,才能繼續提交或創建 PR。
+是否現在執行 Instruction 1 修復? (強烈建議: 是)
+```
+
+---
+
+#### 如果驗證發現 Warning 問題:
+
+**Warning 問題定義**:
+- 有小型文檔更新遺漏
+- 有非關鍵統計數據差異 <10%
+- 有可選文檔未更新 (如 README)
+
+**處理邏輯**:
+1. AI 報告問題
+2. AI 建議修復,但不強制
+3. 用戶可以選擇延後修復
+
+**範例**:
+```
+⚠️ 驗證警告: 發現小問題
+- US 1.2 文檔的測試狀態未更新
+
+建議在下次 Session 修復。是否現在修復? (可選)
+```
 ```
 
 ---
@@ -1238,7 +1778,7 @@ commits:
 
 ---
 
-**文檔版本**: 2.0.0
+**文檔版本**: 2.2.0
 **創建日期**: 2025-11-05
 **最後更新**: 2025-11-06
 **維護者**: AI Assistant (Claude Code)
@@ -1247,6 +1787,51 @@ commits:
 ---
 
 ## 📝 版本歷史
+
+### v2.2.0 (2025-11-06) - 完善測試失敗處理
+**更新類型**: Phase 3 完善 (Sprint 2 Week 2 Day 17)
+
+**新增內容**:
+- ✅ **Instruction 3 測試失敗處理流程** (~200 lines)
+  - 5 個步驟的完整測試失敗處理流程
+  - 3 個測試分類 (Critical 🔴, Known Issue 🟡, Edge Case 🟢)
+  - 決策矩陣 (STOP, CONTINUE WITH ANNOTATION, CONTINUE WITH NOTE)
+  - 文檔更新規則 (測試失敗時也要記錄)
+  - 提交訊息標注規範 (3 種場景)
+
+**預期效果**:
+- AI 在測試失敗時做出更智能的決策
+- 避免過度阻塞 (已知問題不應阻止提交)
+- 避免過度寬鬆 (Critical 失敗必須修復)
+- 確保所有測試失敗都有文檔記錄
+
+---
+
+### v2.1.0 (2025-11-06) - 增強驗證與優先級系統
+**更新類型**: Phase 2 增強 (Sprint 2 Week 1 Day 14)
+
+**新增內容**:
+- ✅ **Instructions 優先級矩陣** (~180 lines)
+  - 定義 3 個優先級 (Critical 🔴, High 🟡, Medium 🟢)
+  - 為所有 10 個 Instructions 添加優先級標記
+  - 3 個執行規則詳解 (Rule 1-3)
+  - 優先級覆蓋規則 (降低、提升、加速模式)
+  - 優先級決策流程圖
+  - 優先級記錄與追蹤機制
+
+- ✅ **Instruction 6 強化** (~210 lines 新增)
+  - 添加 4 個強制執行時機 (Critical)
+  - 5 個詳細驗證項目 (PROJECT-STATUS-REPORT, US 文檔, 測試文檔等)
+  - 驗證失敗處理邏輯 (Critical vs Warning)
+  - 更新 AI 輸出格式 (包含自動修復建議)
+  - 強制執行邏輯和範例
+
+**預期效果**:
+- 提供主動錯誤檢測,減少文檔不一致風險
+- 幫助 AI 做出更好的決策,減少用戶干預需求
+- 文檔驗證從"可選"變為"強制" (在關鍵時機)
+
+---
 
 ### v2.0.0 (2025-11-06) - 主動觸發機制
 **重大更新**: 從"被動響應式"升級為"主動監測式"設計
