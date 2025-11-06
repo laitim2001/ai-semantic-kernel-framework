@@ -33,13 +33,10 @@ public sealed class ExecutionStatus
     /// </summary>
     public static ExecutionStatus From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Execution status cannot be empty", nameof(value));
-
-        var normalizedValue = value.ToLowerInvariant();
+        var normalizedValue = string.IsNullOrWhiteSpace(value) ? value : value.ToLowerInvariant();
 
         if (!ValidStatuses.Contains(normalizedValue))
-            throw new ArgumentException($"Invalid execution status: {value}. Valid statuses: {string.Join(", ", ValidStatuses)}", nameof(value));
+            throw new ArgumentException($"Invalid execution status: {value ?? "(null)"}. Valid statuses: {string.Join(", ", ValidStatuses)}", nameof(value));
 
         return new ExecutionStatus(normalizedValue);
     }

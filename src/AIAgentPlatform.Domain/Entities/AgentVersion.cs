@@ -131,6 +131,9 @@ public sealed class AgentVersion : BaseEntity
         if (rolledBackBy == Guid.Empty)
             throw new ArgumentException("RolledBackBy user ID cannot be empty", nameof(rolledBackBy));
 
+        if (RolledBackAt.HasValue)
+            throw new InvalidOperationException("Version has already been rolled back");
+
         RolledBackAt = DateTime.UtcNow;
         RolledBackBy = rolledBackBy;
         MarkAsModified();

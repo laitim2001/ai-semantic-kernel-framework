@@ -35,13 +35,10 @@ public sealed class PluginType
     /// </summary>
     public static PluginType From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Plugin type cannot be empty", nameof(value));
-
-        var normalizedValue = value.ToLowerInvariant();
+        var normalizedValue = string.IsNullOrWhiteSpace(value) ? value : value.ToLowerInvariant();
 
         if (!ValidTypes.Contains(normalizedValue))
-            throw new ArgumentException($"Invalid plugin type: {value}. Valid types: {string.Join(", ", ValidTypes)}", nameof(value));
+            throw new ArgumentException($"Invalid plugin type: {value ?? "(null)"}. Valid types: {string.Join(", ", ValidTypes)}", nameof(value));
 
         return new PluginType(normalizedValue);
     }

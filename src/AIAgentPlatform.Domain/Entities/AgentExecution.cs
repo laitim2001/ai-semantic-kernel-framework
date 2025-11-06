@@ -92,8 +92,11 @@ public sealed class AgentExecution : BaseEntity
     /// </summary>
     public void MarkAsCompleted(int tokensUsed)
     {
+        if (tokensUsed <= 0)
+            throw new ArgumentException("Tokens used must be greater than 0", nameof(tokensUsed));
+
         if (Status != ExecutionStatus.Running)
-            throw new InvalidOperationException("Only running executions can be marked as completed");
+            throw new InvalidOperationException("Execution has already ended");
 
         EndTime = DateTime.UtcNow;
         Status = ExecutionStatus.Completed;
@@ -110,8 +113,11 @@ public sealed class AgentExecution : BaseEntity
         if (string.IsNullOrWhiteSpace(errorMessage))
             throw new ArgumentException("Error message cannot be empty", nameof(errorMessage));
 
+        if (errorMessage.Length > 2000)
+            throw new ArgumentException("Error message cannot exceed 2000 characters", nameof(errorMessage));
+
         if (Status != ExecutionStatus.Running)
-            throw new InvalidOperationException("Only running executions can be marked as failed");
+            throw new InvalidOperationException("Execution has already ended");
 
         EndTime = DateTime.UtcNow;
         Status = ExecutionStatus.Failed;
