@@ -46,7 +46,8 @@ public sealed class AgentPluginRepository : IAgentPluginRepository
 
         if (enabledOnly.HasValue && enabledOnly.Value)
         {
-            query = query.Where(ap => ap.IsEnabled);
+            // Filter by both AgentPlugin and Plugin enabled status
+            query = query.Where(ap => ap.IsEnabled && ap.Plugin!.IsEnabled);
         }
 
         return await query

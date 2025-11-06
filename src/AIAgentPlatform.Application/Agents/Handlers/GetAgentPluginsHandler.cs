@@ -1,5 +1,6 @@
 using AIAgentPlatform.Application.Agents.DTOs;
 using AIAgentPlatform.Application.Agents.Queries;
+using AIAgentPlatform.Domain.Exceptions;
 using AIAgentPlatform.Domain.Interfaces;
 using MediatR;
 
@@ -25,7 +26,7 @@ public class GetAgentPluginsHandler : IRequestHandler<GetAgentPlugins, List<Agen
     {
         // 驗證 Agent 存在
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
+            ?? throw new EntityNotFoundException($"Agent with ID {request.AgentId} not found");
 
         // 查詢 Agent 的所有 Plugins
         var agentPlugins = await _agentPluginRepository.GetByAgentIdAsync(
@@ -45,7 +46,19 @@ public class GetAgentPluginsHandler : IRequestHandler<GetAgentPlugins, List<Agen
             IsEnabled = ap.IsEnabled,
             ExecutionOrder = ap.ExecutionOrder,
             CustomConfiguration = ap.CustomConfiguration,
-            AddedAt = ap.AddedAt
+            AddedAt = ap.AddedAt,
+            Plugin = ap.Plugin != null ? new PluginDto
+            {
+                Id = ap.Plugin.Id,
+                Name = ap.Plugin.Name,
+                Type = ap.Plugin.Type.Value,
+                Version = ap.Plugin.Version,
+                Description = ap.Plugin.Description ?? string.Empty,
+                Configuration = string.Empty,
+                IsEnabled = ap.Plugin.IsEnabled,
+                CreatedAt = ap.Plugin.CreatedAt,
+                UpdatedAt = ap.Plugin.UpdatedAt
+            } : new PluginDto()
         }).ToList();
     }
 }

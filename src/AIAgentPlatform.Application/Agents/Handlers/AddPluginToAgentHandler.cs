@@ -1,5 +1,6 @@
 using AIAgentPlatform.Application.Agents.Commands;
 using AIAgentPlatform.Domain.Entities;
+using AIAgentPlatform.Domain.Exceptions;
 using AIAgentPlatform.Domain.Interfaces;
 using MediatR;
 
@@ -28,11 +29,11 @@ public class AddPluginToAgentHandler : IRequestHandler<AddPluginToAgentCommand, 
     {
         // 驗證 Agent 存在
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Agent with ID {request.AgentId} not found");
+            ?? throw new EntityNotFoundException($"Agent with ID {request.AgentId} not found");
 
         // 驗證 Plugin 存在
         var plugin = await _pluginRepository.GetByIdAsync(request.PluginId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Plugin with ID {request.PluginId} not found");
+            ?? throw new EntityNotFoundException($"Plugin with ID {request.PluginId} not found");
 
         // 檢查是否已經添加過
         var exists = await _agentPluginRepository.ExistsAsync(
@@ -42,7 +43,7 @@ public class AddPluginToAgentHandler : IRequestHandler<AddPluginToAgentCommand, 
 
         if (exists)
         {
-            throw new InvalidOperationException($"Plugin {plugin.Name} is already added to this agent");
+            throw new ArgumentException($"Plugin {plugin.Name} is already added to this agent");
         }
 
         // 建立 AgentPlugin 關聯
