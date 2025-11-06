@@ -61,22 +61,38 @@ public sealed class AgentExecutionController : ControllerBase
     }
 
     /// <summary>
-    /// Get execution history for an agent
+    /// Get execution history for an agent with advanced filtering, sorting, and pagination
     /// </summary>
     /// <param name="agentId">The agent ID</param>
     /// <param name="startDate">Filter by start date</param>
     /// <param name="endDate">Filter by end date</param>
     /// <param name="status">Filter by status (running, completed, failed, cancelled)</param>
+    /// <param name="conversationId">Filter by conversation ID</param>
+    /// <param name="minTokens">Minimum tokens used</param>
+    /// <param name="maxTokens">Maximum tokens used</param>
+    /// <param name="minResponseTimeMs">Minimum response time in milliseconds</param>
+    /// <param name="maxResponseTimeMs">Maximum response time in milliseconds</param>
+    /// <param name="searchTerm">Search term (searches in error messages and metadata)</param>
+    /// <param name="sortBy">Sort by field (startTime, endTime, responseTimeMs, tokensUsed, status)</param>
+    /// <param name="sortDescending">Sort descending (default: true)</param>
     /// <param name="skip">Number of records to skip (default: 0)</param>
     /// <param name="take">Number of records to take (default: 50, max: 100)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("history")]
-    [ProducesResponseType(typeof(List<AgentExecutionDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<AgentExecutionDto>>> GetHistory(
+    [ProducesResponseType(typeof(PagedResultDto<AgentExecutionDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResultDto<AgentExecutionDto>>> GetHistory(
         Guid agentId,
         [FromQuery] DateTime? startDate,
         [FromQuery] DateTime? endDate,
         [FromQuery] string? status,
+        [FromQuery] Guid? conversationId,
+        [FromQuery] int? minTokens,
+        [FromQuery] int? maxTokens,
+        [FromQuery] double? minResponseTimeMs,
+        [FromQuery] double? maxResponseTimeMs,
+        [FromQuery] string? searchTerm,
+        [FromQuery] string? sortBy,
+        [FromQuery] bool sortDescending = true,
         [FromQuery] int skip = 0,
         [FromQuery] int take = 50,
         CancellationToken cancellationToken = default)
@@ -87,6 +103,14 @@ public sealed class AgentExecutionController : ControllerBase
             StartDate = startDate,
             EndDate = endDate,
             Status = status,
+            ConversationId = conversationId,
+            MinTokens = minTokens,
+            MaxTokens = maxTokens,
+            MinResponseTimeMs = minResponseTimeMs,
+            MaxResponseTimeMs = maxResponseTimeMs,
+            SearchTerm = searchTerm,
+            SortBy = sortBy,
+            SortDescending = sortDescending,
             Skip = skip,
             Take = Math.Min(take, 100) // Max 100 records
         };
@@ -119,6 +143,67 @@ public sealed class AgentExecutionController : ControllerBase
 
         var result = await _sender.Send(query, cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Get detailed execution information including navigation properties
+    /// </summary>
+    /// <param name="agentId">The agent ID</param>
+    /// <param name="executionId">The execution ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("{executionId:guid}")]
+    [ProducesResponseType(typeof(AgentExecutionDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AgentExecutionDetailDto>> GetExecutionDetails(
+        Guid agentId,
+        Guid executionId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetExecutionDetails
+        {
+            ExecutionId = executionId
+        };
+
+        var result = await _sender.Send(query, cancellationToken);
+
+        if (result == null)
+        {
+            return NotFound($"Execution {executionId} not found");
+        }
+
+        // Verify the execution belongs to this agent
+        if (result.AgentId != agentId)
+        {
+            return NotFound($"Execution {executionId} does not belong to agent {agentId}");
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get all executions for a specific conversation
+    /// </summary>
+    /// <param name="agentId">The agent ID</param>
+    /// <param name="conversationId">The conversation ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("conversations/{conversationId:guid}/executions")]
+    [ProducesResponseType(typeof(List<AgentExecutionDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<AgentExecutionDto>>> GetConversationExecutions(
+        Guid agentId,
+        Guid conversationId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetConversationExecutions
+        {
+            ConversationId = conversationId
+        };
+
+        var result = await _sender.Send(query, cancellationToken);
+
+        // Filter to only include executions for this agent
+        var agentExecutions = result.Where(e => e.AgentId == agentId).ToList();
+
+        return Ok(agentExecutions);
     }
 }
 

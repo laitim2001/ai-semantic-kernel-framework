@@ -38,10 +38,18 @@ public sealed class GetExecutionHistoryHandlerTests
                 It.IsAny<DateTime?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<string>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<double?>(),
+                It.IsAny<double?>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(executions);
+            .ReturnsAsync((executions, executions.Count));
 
         var query = new GetExecutionHistory
         {
@@ -55,11 +63,12 @@ public sealed class GetExecutionHistoryHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(2);
-        result[0].AgentId.Should().Be(agentId);
-        result[0].Status.Should().Be("completed");
-        result[0].TokensUsed.Should().Be(100);
-        result[1].TokensUsed.Should().Be(200);
+        result.Items.Should().HaveCount(2);
+        result.TotalCount.Should().Be(2);
+        result.Items[0].AgentId.Should().Be(agentId);
+        result.Items[0].Status.Should().Be("completed");
+        result.Items[0].TokensUsed.Should().Be(100);
+        result.Items[1].TokensUsed.Should().Be(200);
     }
 
     [Fact]
@@ -76,10 +85,18 @@ public sealed class GetExecutionHistoryHandlerTests
                 startDate,
                 endDate,
                 "completed",
+                It.IsAny<Guid?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<double?>(),
+                It.IsAny<double?>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
                 10,
                 20,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<AgentExecution>());
+            .ReturnsAsync((new List<AgentExecution>(), 0));
 
         var query = new GetExecutionHistory
         {
@@ -101,6 +118,14 @@ public sealed class GetExecutionHistoryHandlerTests
                 startDate,
                 endDate,
                 "completed",
+                It.IsAny<Guid?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<double?>(),
+                It.IsAny<double?>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
                 10,
                 20,
                 It.IsAny<CancellationToken>()),

@@ -51,7 +51,7 @@ public class GetAgentStatisticsHandler : IRequestHandler<GetAgentStatistics, Age
             : 0;
 
         // 獲取最後一次執行時間
-        var recentExecutions = await _executionRepository.GetByAgentIdAsync(
+        var (recentExecutions, _) = await _executionRepository.GetByAgentIdAsync(
             request.AgentId,
             startDate,
             endDate,

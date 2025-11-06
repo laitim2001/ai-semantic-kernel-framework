@@ -3,8 +3,8 @@ using System.Net.Http.Json;
 using AIAgentPlatform.Application.Agents.Commands;
 using AIAgentPlatform.Application.Agents.DTOs;
 using AIAgentPlatform.Application.AgentExecutions.DTOs;
-using AIAgentPlatform.Application.Conversations.Commands;
-using AIAgentPlatform.Application.Conversations.DTOs;
+using AIAgentPlatform.Application.Conversations.Commands.CreateConversation;
+using AIAgentPlatform.Application.Common.DTOs;
 using AIAgentPlatform.API.Controllers;
 using FluentAssertions;
 
@@ -53,9 +53,10 @@ public sealed class AgentExecutionApiTests : IClassFixture<WebApplicationFactory
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var executions = await response.Content.ReadFromJsonAsync<List<AgentExecutionDto>>();
-        executions.Should().NotBeNull();
-        executions.Should().BeEmpty(); // No executions yet
+        var result = await response.Content.ReadFromJsonAsync<PagedResultDto<AgentExecutionDto>>();
+        result.Should().NotBeNull();
+        result!.Items.Should().BeEmpty(); // No executions yet
+        result.TotalCount.Should().Be(0);
     }
 
     [Fact]
@@ -80,9 +81,10 @@ public sealed class AgentExecutionApiTests : IClassFixture<WebApplicationFactory
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var executions = await response.Content.ReadFromJsonAsync<List<AgentExecutionDto>>();
-        executions.Should().NotBeNull();
-        executions.Should().HaveCountLessOrEqualTo(10);
+        var result = await response.Content.ReadFromJsonAsync<PagedResultDto<AgentExecutionDto>>();
+        result.Should().NotBeNull();
+        result!.Items.Should().HaveCountLessOrEqualTo(10);
+        result.PageSize.Should().Be(10);
     }
 
     [Fact]

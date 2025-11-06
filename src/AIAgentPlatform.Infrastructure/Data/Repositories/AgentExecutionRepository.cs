@@ -19,16 +19,30 @@ public sealed class AgentExecutionRepository : IAgentExecutionRepository
     public async Task<AgentExecution?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.AgentExecutions
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+    }
+
+    public async Task<AgentExecution?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.AgentExecutions
             .Include(e => e.Agent)
             .Include(e => e.Conversation)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
-    public async Task<List<AgentExecution>> GetByAgentIdAsync(
+    public async Task<(List<AgentExecution> Items, int TotalCount)> GetByAgentIdAsync(
         Guid agentId,
         DateTime? startDate = null,
         DateTime? endDate = null,
         string? status = null,
+        Guid? conversationId = null,
+        int? minTokens = null,
+        int? maxTokens = null,
+        double? minResponseTimeMs = null,
+        double? maxResponseTimeMs = null,
+        string? searchTerm = null,
+        string? sortBy = null,
+        bool sortDescending = true,
         int skip = 0,
         int take = 50,
         CancellationToken cancellationToken = default)
@@ -53,11 +67,73 @@ public sealed class AgentExecutionRepository : IAgentExecutionRepository
             query = query.Where(e => e.Status.Value == status.ToLowerInvariant());
         }
 
-        return await query
-            .OrderByDescending(e => e.StartTime)
+        // Apply conversation filter
+        if (conversationId.HasValue)
+        {
+            query = query.Where(e => e.ConversationId == conversationId.Value);
+        }
+
+        // Apply token range filter
+        if (minTokens.HasValue)
+        {
+            query = query.Where(e => e.TokensUsed >= minTokens.Value);
+        }
+
+        if (maxTokens.HasValue)
+        {
+            query = query.Where(e => e.TokensUsed <= maxTokens.Value);
+        }
+
+        // Apply response time range filter
+        if (minResponseTimeMs.HasValue)
+        {
+            query = query.Where(e => e.ResponseTimeMs >= minResponseTimeMs.Value);
+        }
+
+        if (maxResponseTimeMs.HasValue)
+        {
+            query = query.Where(e => e.ResponseTimeMs <= maxResponseTimeMs.Value);
+        }
+
+        // Apply search term (search in ErrorMessage and Metadata)
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var searchLower = searchTerm.ToLowerInvariant();
+            query = query.Where(e =>
+                (e.ErrorMessage != null && e.ErrorMessage.ToLower().Contains(searchLower)) ||
+                (e.Metadata != null && e.Metadata.ToLower().Contains(searchLower)));
+        }
+
+        // Get total count before pagination
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Apply sorting
+        query = (sortBy?.ToLowerInvariant()) switch
+        {
+            "endtime" => sortDescending
+                ? query.OrderByDescending(e => e.EndTime)
+                : query.OrderBy(e => e.EndTime),
+            "responsetimems" or "responsetime" => sortDescending
+                ? query.OrderByDescending(e => e.ResponseTimeMs)
+                : query.OrderBy(e => e.ResponseTimeMs),
+            "tokensused" or "tokens" => sortDescending
+                ? query.OrderByDescending(e => e.TokensUsed)
+                : query.OrderBy(e => e.TokensUsed),
+            "status" => sortDescending
+                ? query.OrderByDescending(e => e.Status.Value)
+                : query.OrderBy(e => e.Status.Value),
+            _ => sortDescending
+                ? query.OrderByDescending(e => e.StartTime)
+                : query.OrderBy(e => e.StartTime)
+        };
+
+        // Apply pagination
+        var items = await query
             .Skip(skip)
             .Take(take)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 
     public async Task<List<AgentExecution>> GetByConversationIdAsync(

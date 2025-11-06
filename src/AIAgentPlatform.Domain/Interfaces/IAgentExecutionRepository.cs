@@ -13,13 +13,26 @@ public interface IAgentExecutionRepository
     Task<AgentExecution?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all executions for a specific agent
+    /// Gets execution by ID with navigation properties loaded
     /// </summary>
-    Task<List<AgentExecution>> GetByAgentIdAsync(
+    Task<AgentExecution?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all executions for a specific agent with advanced filtering
+    /// </summary>
+    Task<(List<AgentExecution> Items, int TotalCount)> GetByAgentIdAsync(
         Guid agentId,
         DateTime? startDate = null,
         DateTime? endDate = null,
         string? status = null,
+        Guid? conversationId = null,
+        int? minTokens = null,
+        int? maxTokens = null,
+        double? minResponseTimeMs = null,
+        double? maxResponseTimeMs = null,
+        string? searchTerm = null,
+        string? sortBy = null,
+        bool sortDescending = true,
         int skip = 0,
         int take = 50,
         CancellationToken cancellationToken = default);
