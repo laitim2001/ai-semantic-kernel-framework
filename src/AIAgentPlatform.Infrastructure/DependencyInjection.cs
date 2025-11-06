@@ -31,6 +31,10 @@ public static class DependencyInjection
         services.AddScoped<IAgentRepository, AgentRepository>();
         services.AddScoped<IConversationRepository, ConversationRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
+        services.AddScoped<IAgentExecutionRepository, AgentExecutionRepository>();
+        services.AddScoped<IPluginRepository, PluginRepository>();
+        services.AddScoped<IAgentPluginRepository, AgentPluginRepository>();
+        services.AddScoped<IAgentVersionRepository, AgentVersionRepository>();
 
         return services;
     }

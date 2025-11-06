@@ -96,7 +96,18 @@ app.UseExceptionHandler(errorApp =>
                 return;
             }
 
-            if (exception is AIAgentPlatform.Domain.Exceptions.AgentNotFoundException)
+            if (exception is ArgumentException)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = exception.Message
+                });
+                return;
+            }
+
+            if (exception is AIAgentPlatform.Domain.Exceptions.AgentNotFoundException or
+                AIAgentPlatform.Domain.Exceptions.EntityNotFoundException)
             {
                 context.Response.StatusCode = 404;
             }
@@ -109,3 +120,6 @@ app.UseExceptionHandler(errorApp =>
 app.MapControllers();
 
 app.Run();
+
+// Make Program class accessible to integration tests
+public partial class Program { }

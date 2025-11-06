@@ -228,4 +228,145 @@ public sealed class AgentsController : ControllerBase
         var result = await _sender.Send(command, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Get agent execution statistics
+    /// </summary>
+    /// <param name="id">Agent ID</param>
+    /// <param name="startDate">Statistics period start date (optional, default: 1 month ago)</param>
+    /// <param name="endDate">Statistics period end date (optional, default: now)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("{id:guid}/statistics")]
+    [ProducesResponseType(typeof(AgentStatisticsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AgentStatisticsDto>> GetStatistics(
+        Guid id,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetAgentStatistics(id, startDate, endDate);
+        var result = await _sender.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get agent version history
+    /// </summary>
+    /// <param name="id">Agent ID</param>
+    /// <param name="skip">Number of records to skip</param>
+    /// <param name="take">Number of records to take</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("{id:guid}/versions")]
+    [ProducesResponseType(typeof(List<AgentVersionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<AgentVersionDto>>> GetVersionHistory(
+        Guid id,
+        CancellationToken cancellationToken,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 20)
+    {
+        var query = new GetAgentVersionHistory(id, skip, take);
+        var result = await _sender.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Create a new agent version snapshot
+    /// </summary>
+    /// <param name="command">Command containing version details</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("versions")]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<Guid>> CreateVersion(
+        [FromBody] CreateAgentVersionCommand command,
+        CancellationToken cancellationToken)
+    {
+        var versionId = await _sender.Send(command, cancellationToken);
+        return CreatedAtAction(nameof(GetVersionHistory), new { id = command.AgentId }, versionId);
+    }
+
+    /// <summary>
+    /// Rollback agent to a specific version
+    /// </summary>
+    /// <param name="command">Command containing agent ID and target version ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("versions/rollback")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<bool>> RollbackVersion(
+        [FromBody] RollbackAgentVersionCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get agent plugins
+    /// </summary>
+    /// <param name="id">Agent ID</param>
+    /// <param name="enabledOnly">Only return enabled plugins</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("{id:guid}/plugins")]
+    [ProducesResponseType(typeof(List<AgentPluginDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<AgentPluginDto>>> GetPlugins(
+        Guid id,
+        CancellationToken cancellationToken,
+        [FromQuery] bool? enabledOnly = null)
+    {
+        var query = new GetAgentPlugins(id, enabledOnly);
+        var result = await _sender.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Add a plugin to an agent
+    /// </summary>
+    /// <param name="command">Command containing agent and plugin details</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("plugins/add")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<bool>> AddPlugin(
+        [FromBody] AddPluginToAgentCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Remove a plugin from an agent
+    /// </summary>
+    /// <param name="command">Command containing agent and plugin IDs</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPost("plugins/remove")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<bool>> RemovePlugin(
+        [FromBody] RemovePluginFromAgentCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Update agent plugin configuration
+    /// </summary>
+    /// <param name="command">Command containing updated plugin settings</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpPut("plugins/update")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<bool>> UpdatePlugin(
+        [FromBody] UpdateAgentPluginCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
 }
