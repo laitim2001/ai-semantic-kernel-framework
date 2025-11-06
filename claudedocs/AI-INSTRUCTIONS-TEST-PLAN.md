@@ -486,7 +486,7 @@ feat: US 1.3 Phase 4 - AgentPlugin API
 | Scenario 1: Event 1 - US 完成 | ⏳ 待測試 | - | - |
 | Scenario 2: Event 2 - 集成測試完成 | ✅ 已測試 | ✅ PASSED | Session 5 關鍵場景, 驗證自動觸發 Inst 1 |
 | Scenario 3: Event 4 - Phase 完成 | ✅ 已測試 | ✅ PASSED | 實際觸發: Phase 2 & 3 完成更新 v7.1.0 |
-| Scenario 4: Instruction 10 - Session 結束 | ⏳ 待測試 | - | - |
+| Scenario 4: Instruction 10 - Session 結束 | ✅ 已測試 | ✅ PASSED | 實際執行: Session 摘要創建 + commit 推送 |
 | Scenario 5.1: Instruction 6 - 執行 Inst 1 後 | ✅ 已測試 | ✅ PASSED | 自動執行文檔一致性檢查,全部驗證通過 |
 | Scenario 5.2: Instruction 6 - Session 結束 | ⏳ 待測試 | - | - |
 | Scenario 5.3: Instruction 6 - 創建 PR 前 | ⏳ 待測試 | - | - |
@@ -497,8 +497,8 @@ feat: US 1.3 Phase 4 - AgentPlugin API
 | Scenario 7.2: 優先級提升 | ⏳ 待測試 | - | - |
 | Scenario 7.3: 加速模式 | ⏳ 待測試 | - | - |
 
-**測試覆蓋率**: 4/13 (31%)
-**Priority 1 測試通過率**: 2/3 (67%)
+**測試覆蓋率**: 5/13 (38%)
+**Priority 1 測試通過率**: 3/3 (100%) ✅
 
 ---
 
