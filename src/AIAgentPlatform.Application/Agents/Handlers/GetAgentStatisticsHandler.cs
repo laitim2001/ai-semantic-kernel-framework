@@ -39,7 +39,7 @@ public class GetAgentStatisticsHandler : IRequestHandler<GetAgentStatistics, Age
         }
 
         // 從 AgentExecution Repository 獲取統計資訊
-        var (totalExecutions, successfulExecutions, failedExecutions, avgResponseTimeMs) =
+        var (totalExecutions, successfulExecutions, failedExecutions, cancelledExecutions, avgResponseTimeMs) =
             await _executionRepository.GetStatisticsAsync(
                 request.AgentId,
                 startDate,

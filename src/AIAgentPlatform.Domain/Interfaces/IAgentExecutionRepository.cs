@@ -45,12 +45,49 @@ public interface IAgentExecutionRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets execution statistics for an agent
+    /// Gets execution statistics for an agent with detailed performance metrics
     /// </summary>
-    Task<(int Total, int Successful, int Failed, double AvgResponseTimeMs)> GetStatisticsAsync(
+    Task<(int Total, int Successful, int Failed, int Cancelled, double AvgResponseTimeMs)> GetStatisticsAsync(
         Guid agentId,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets detailed performance metrics for an agent
+    /// </summary>
+    Task<(
+        double? MinResponseTimeMs,
+        double? MaxResponseTimeMs,
+        double? MedianResponseTimeMs,
+        double? P95ResponseTimeMs,
+        double? P99ResponseTimeMs,
+        long TotalTokensUsed,
+        double AvgTokensPerExecution,
+        int? MinTokensUsed,
+        int? MaxTokensUsed
+    )> GetDetailedMetricsAsync(
+        Guid agentId,
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets time-series statistics grouped by specified granularity
+    /// </summary>
+    Task<List<(
+        DateTime Timestamp,
+        int Total,
+        int Successful,
+        int Failed,
+        double AvgResponseTimeMs,
+        long TotalTokens,
+        double AvgTokens
+    )>> GetTimeSeriesStatisticsAsync(
+        Guid agentId,
+        DateTime startDate,
+        DateTime endDate,
+        string granularity, // "hour", "day", "week", "month"
         CancellationToken cancellationToken = default);
 
     /// <summary>

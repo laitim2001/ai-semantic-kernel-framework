@@ -120,12 +120,13 @@ public sealed class AgentExecutionController : ControllerBase
     }
 
     /// <summary>
-    /// Get execution statistics for an agent
+    /// Get execution statistics for an agent with enhanced performance metrics
     /// </summary>
     /// <param name="agentId">The agent ID</param>
     /// <param name="startDate">Filter by start date</param>
     /// <param name="endDate">Filter by end date</param>
     /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Detailed execution statistics including response time percentiles and token usage</returns>
     [HttpGet("statistics")]
     [ProducesResponseType(typeof(AgentExecutionStatisticsDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<AgentExecutionStatisticsDto>> GetStatistics(
@@ -143,6 +144,49 @@ public sealed class AgentExecutionController : ControllerBase
 
         var result = await _sender.Send(query, cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Get time-series execution statistics for an agent
+    /// </summary>
+    /// <param name="agentId">The agent ID</param>
+    /// <param name="startDate">Start date for time series</param>
+    /// <param name="endDate">End date for time series</param>
+    /// <param name="granularity">Time granularity: hour, day, week, month (default: day)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Time-series statistics grouped by specified granularity</returns>
+    [HttpGet("statistics/timeseries")]
+    [ProducesResponseType(typeof(TimeSeriesStatisticsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<TimeSeriesStatisticsDto>> GetTimeSeriesStatistics(
+        Guid agentId,
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate,
+        [FromQuery] string granularity = "day",
+        CancellationToken cancellationToken = default)
+    {
+        if (startDate >= endDate)
+        {
+            return BadRequest("Start date must be before end date");
+        }
+
+        var query = new GetTimeSeriesStatistics
+        {
+            AgentId = agentId,
+            StartDate = startDate,
+            EndDate = endDate,
+            Granularity = granularity
+        };
+
+        try
+        {
+            var result = await _sender.Send(query, cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     /// <summary>
