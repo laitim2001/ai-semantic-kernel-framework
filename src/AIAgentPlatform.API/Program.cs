@@ -1,4 +1,7 @@
+using AIAgentPlatform.API.Hubs;
+using AIAgentPlatform.API.Services;
 using AIAgentPlatform.Application;
+using AIAgentPlatform.Application.AgentExecutions.Services;
 using AIAgentPlatform.Infrastructure;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
@@ -11,6 +14,12 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // Add controllers
 builder.Services.AddControllers();
+
+// Add SignalR
+builder.Services.AddSignalR();
+
+// Register execution notification service
+builder.Services.AddScoped<IExecutionNotificationService, ExecutionNotificationService>();
 
 // Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -32,7 +41,7 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// Add CORS
+// Add CORS (updated for SignalR support)
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -40,6 +49,15 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
+    });
+
+    // SignalR-specific CORS policy
+    options.AddPolicy("SignalRCors", policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -118,6 +136,10 @@ app.UseExceptionHandler(errorApp =>
 });
 
 app.MapControllers();
+
+// Map SignalR Hub with CORS support
+app.MapHub<ExecutionMonitorHub>("/hubs/execution-monitor")
+   .RequireCors("SignalRCors");
 
 app.Run();
 

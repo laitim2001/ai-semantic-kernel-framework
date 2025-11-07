@@ -1,6 +1,7 @@
 using AIAgentPlatform.Application.AgentExecutions.Commands;
 using AIAgentPlatform.Application.AgentExecutions.DTOs;
 using AIAgentPlatform.Application.AgentExecutions.Queries;
+using AIAgentPlatform.Application.AgentExecutions.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,10 +16,12 @@ namespace AIAgentPlatform.API.Controllers;
 public sealed class AgentExecutionController : ControllerBase
 {
     private readonly ISender _sender;
+    private readonly IExecutionExportService _exportService;
 
-    public AgentExecutionController(ISender sender)
+    public AgentExecutionController(ISender sender, IExecutionExportService exportService)
     {
         _sender = sender;
+        _exportService = exportService;
     }
 
     /// <summary>
@@ -248,6 +251,94 @@ public sealed class AgentExecutionController : ControllerBase
         var agentExecutions = result.Where(e => e.AgentId == agentId).ToList();
 
         return Ok(agentExecutions);
+    }
+
+    /// <summary>
+    /// Export execution history to CSV format
+    /// </summary>
+    /// <param name="agentId">The agent ID</param>
+    /// <param name="startDate">Filter by start date</param>
+    /// <param name="endDate">Filter by end date</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("export/csv")]
+    [Produces("text/csv")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExportToCsv(
+        Guid agentId,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        CancellationToken cancellationToken)
+    {
+        var csvData = await _exportService.ExportToCsvAsync(agentId, startDate, endDate, cancellationToken);
+        var fileName = $"agent-{agentId}-executions-{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
+
+        return File(csvData, "text/csv", fileName);
+    }
+
+    /// <summary>
+    /// Export execution history to JSON format
+    /// </summary>
+    /// <param name="agentId">The agent ID</param>
+    /// <param name="startDate">Filter by start date</param>
+    /// <param name="endDate">Filter by end date</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("export/json")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExportToJson(
+        Guid agentId,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        CancellationToken cancellationToken)
+    {
+        var jsonData = await _exportService.ExportToJsonAsync(agentId, startDate, endDate, cancellationToken);
+        var fileName = $"agent-{agentId}-executions-{DateTime.UtcNow:yyyyMMddHHmmss}.json";
+
+        return File(System.Text.Encoding.UTF8.GetBytes(jsonData), "application/json", fileName);
+    }
+
+    /// <summary>
+    /// Export execution statistics to CSV format
+    /// </summary>
+    /// <param name="agentId">The agent ID</param>
+    /// <param name="startDate">Filter by start date</param>
+    /// <param name="endDate">Filter by end date</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("export/statistics/csv")]
+    [Produces("text/csv")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExportStatisticsToCsv(
+        Guid agentId,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        CancellationToken cancellationToken)
+    {
+        var csvData = await _exportService.ExportStatisticsToCsvAsync(agentId, startDate, endDate, cancellationToken);
+        var fileName = $"agent-{agentId}-statistics-{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
+
+        return File(csvData, "text/csv", fileName);
+    }
+
+    /// <summary>
+    /// Export execution statistics to JSON format
+    /// </summary>
+    /// <param name="agentId">The agent ID</param>
+    /// <param name="startDate">Filter by start date</param>
+    /// <param name="endDate">Filter by end date</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("export/statistics/json")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExportStatisticsToJson(
+        Guid agentId,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        CancellationToken cancellationToken)
+    {
+        var jsonData = await _exportService.ExportStatisticsToJsonAsync(agentId, startDate, endDate, cancellationToken);
+        var fileName = $"agent-{agentId}-statistics-{DateTime.UtcNow:yyyyMMddHHmmss}.json";
+
+        return File(System.Text.Encoding.UTF8.GetBytes(jsonData), "application/json", fileName);
     }
 }
 

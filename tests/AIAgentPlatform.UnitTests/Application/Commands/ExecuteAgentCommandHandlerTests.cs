@@ -12,15 +12,18 @@ public sealed class ExecuteAgentCommandHandlerTests
 {
     private readonly Mock<IAgentRepository> _agentRepositoryMock;
     private readonly Mock<IAgentExecutionService> _executionServiceMock;
+    private readonly Mock<IExecutionNotificationService> _notificationServiceMock;
     private readonly ExecuteAgentCommandHandler _handler;
 
     public ExecuteAgentCommandHandlerTests()
     {
         _agentRepositoryMock = new Mock<IAgentRepository>();
         _executionServiceMock = new Mock<IAgentExecutionService>();
+        _notificationServiceMock = new Mock<IExecutionNotificationService>();
         _handler = new ExecuteAgentCommandHandler(
             _agentRepositoryMock.Object,
-            _executionServiceMock.Object
+            _executionServiceMock.Object,
+            _notificationServiceMock.Object
         );
     }
 

@@ -2,6 +2,7 @@ using AIAgentPlatform.Application.AgentExecutions.Services;
 using AIAgentPlatform.Domain.Interfaces;
 using AIAgentPlatform.Infrastructure.Data;
 using AIAgentPlatform.Infrastructure.Data.Repositories;
+using AIAgentPlatform.Infrastructure.Services;
 using AIAgentPlatform.Infrastructure.Services.AgentExecution;
 using AIAgentPlatform.Infrastructure.Services.SemanticKernel;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,7 @@ public static class DependencyInjection
         // Register services
         services.AddScoped<ISemanticKernelService, SemanticKernelService>();
         services.AddScoped<IAgentExecutionService, AgentExecutionService>();
+        services.AddScoped<IExecutionExportService, ExecutionExportService>();
 
         return services;
     }

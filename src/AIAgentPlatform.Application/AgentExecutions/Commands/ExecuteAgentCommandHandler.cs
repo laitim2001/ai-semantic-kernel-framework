@@ -12,18 +12,20 @@ public sealed class ExecuteAgentCommandHandler : IRequestHandler<ExecuteAgentCom
 {
     private readonly IAgentRepository _agentRepository;
     private readonly IAgentExecutionService _executionService;
+    private readonly IExecutionNotificationService _notificationService;
 
     public ExecuteAgentCommandHandler(
         IAgentRepository agentRepository,
-        IAgentExecutionService executionService)
+        IAgentExecutionService executionService,
+        IExecutionNotificationService notificationService)
     {
         _agentRepository = agentRepository;
         _executionService = executionService;
+        _notificationService = notificationService;
     }
 
     public async Task<AgentExecutionResultDto> Handle(ExecuteAgentCommand request, CancellationToken cancellationToken)
     {
-
         // Get agent
         var agent = await _agentRepository.GetByIdAsync(request.AgentId, cancellationToken);
         if (agent == null)
@@ -37,27 +39,58 @@ public sealed class ExecuteAgentCommandHandler : IRequestHandler<ExecuteAgentCom
             throw new InvalidOperationException($"Agent {request.AgentId} is not active (status: {agent.Status.Value})");
         }
 
-        // Execute agent
-        var (execution, output) = await _executionService.ExecuteAsync(
-            agent,
-            request.ConversationId,
-            request.Input,
-            request.Metadata,
-            cancellationToken);
+        // Create a temporary execution ID for start notification
+        var executionId = Guid.NewGuid();
 
-        // Map to DTO
-        return new AgentExecutionResultDto
+        try
         {
-            ExecutionId = execution.Id,
-            AgentId = execution.AgentId,
-            ConversationId = execution.ConversationId,
-            Status = execution.Status.Value,
-            Output = output,
-            ErrorMessage = execution.ErrorMessage,
-            StartTime = execution.StartTime,
-            EndTime = execution.EndTime,
-            ResponseTimeMs = execution.ResponseTimeMs,
-            TokensUsed = execution.TokensUsed
-        };
+            // Notify execution started
+            await _notificationService.NotifyExecutionStartedAsync(
+                request.AgentId,
+                executionId,
+                cancellationToken);
+
+            // Execute agent
+            var (execution, output) = await _executionService.ExecuteAsync(
+                agent,
+                request.ConversationId,
+                request.Input,
+                request.Metadata,
+                cancellationToken);
+
+            // Map to DTO
+            var result = new AgentExecutionResultDto
+            {
+                ExecutionId = execution.Id,
+                AgentId = execution.AgentId,
+                ConversationId = execution.ConversationId,
+                Status = execution.Status.Value,
+                Output = output,
+                ErrorMessage = execution.ErrorMessage,
+                StartTime = execution.StartTime,
+                EndTime = execution.EndTime,
+                ResponseTimeMs = execution.ResponseTimeMs,
+                TokensUsed = execution.TokensUsed
+            };
+
+            // Notify execution completed
+            await _notificationService.NotifyExecutionCompletedAsync(
+                request.AgentId,
+                result,
+                cancellationToken);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // Notify execution failed
+            await _notificationService.NotifyExecutionFailedAsync(
+                request.AgentId,
+                executionId,
+                ex.Message,
+                cancellationToken);
+
+            throw;
+        }
     }
 }

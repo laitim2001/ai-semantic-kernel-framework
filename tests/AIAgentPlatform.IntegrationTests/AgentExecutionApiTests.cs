@@ -448,6 +448,190 @@ public sealed class AgentExecutionApiTests : IClassFixture<WebApplicationFactory
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task ExportToCsv_WithValidAgentId_ShouldReturnCsvFile()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent for CSV Export",
+            Description = "Testing CSV export",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o"
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        createAgentResponse.EnsureSuccessStatusCode();
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+        agent.Should().NotBeNull();
+
+        // Act
+        var response = await _client.GetAsync($"/api/agents/{agent!.Id}/AgentExecution/export/csv");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("text/csv");
+        var csvContent = await response.Content.ReadAsStringAsync();
+        csvContent.Should().Contain("ExecutionId,AgentId,ConversationId,Status,StartTime,EndTime,ResponseTimeMs,TokensUsed,ErrorMessage");
+    }
+
+    [Fact]
+    public async Task ExportToJson_WithValidAgentId_ShouldReturnJsonFile()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent for JSON Export",
+            Description = "Testing JSON export",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o"
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        createAgentResponse.EnsureSuccessStatusCode();
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+        agent.Should().NotBeNull();
+
+        // Act
+        var response = await _client.GetAsync($"/api/agents/{agent!.Id}/AgentExecution/export/json");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        var jsonContent = await response.Content.ReadAsStringAsync();
+        jsonContent.Should().Contain("\"executions\"");
+    }
+
+    [Fact]
+    public async Task ExportStatisticsToCsv_WithValidAgentId_ShouldReturnStatisticsCsv()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent for Statistics CSV Export",
+            Description = "Testing statistics CSV export",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o"
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        createAgentResponse.EnsureSuccessStatusCode();
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+        agent.Should().NotBeNull();
+
+        // Act
+        var response = await _client.GetAsync($"/api/agents/{agent!.Id}/AgentExecution/export/statistics/csv");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("text/csv");
+        var csvContent = await response.Content.ReadAsStringAsync();
+        csvContent.Should().Contain("Metric,Value");
+        csvContent.Should().Contain("Agent ID");
+        csvContent.Should().Contain("Total Executions");
+        csvContent.Should().Contain("Success Rate");
+    }
+
+    [Fact]
+    public async Task ExportStatisticsToJson_WithValidAgentId_ShouldReturnStatisticsJson()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent for Statistics JSON Export",
+            Description = "Testing statistics JSON export",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o"
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        createAgentResponse.EnsureSuccessStatusCode();
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+        agent.Should().NotBeNull();
+
+        // Act
+        var response = await _client.GetAsync($"/api/agents/{agent!.Id}/AgentExecution/export/statistics/json");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        var jsonContent = await response.Content.ReadAsStringAsync();
+        jsonContent.Should().Contain("\"agentId\"");
+        jsonContent.Should().Contain("\"executionCounts\"");
+        jsonContent.Should().Contain("\"responseTimeMetrics\"");
+        jsonContent.Should().Contain("\"tokenUsageMetrics\"");
+    }
+
+    [Fact]
+    public async Task ExportToCsv_WithDateRange_ShouldApplyDateFilter()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent for CSV Export with Date Range",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o"
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+
+        var startDate = DateTime.UtcNow.AddDays(-7);
+        var endDate = DateTime.UtcNow;
+
+        // Act
+        var response = await _client.GetAsync(
+            $"/api/agents/{agent!.Id}/AgentExecution/export/csv?startDate={startDate:O}&endDate={endDate:O}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("text/csv");
+    }
+
+    [Fact]
+    public async Task ExportToJson_WithDateRange_ShouldApplyDateFilter()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var createAgentCommand = new CreateAgentCommand
+        {
+            UserId = userId,
+            Name = "Test Agent for JSON Export with Date Range",
+            Instructions = "You are a test assistant",
+            Model = "gpt-4o"
+        };
+
+        var createAgentResponse = await _client.PostAsJsonAsync("/api/agents", createAgentCommand);
+        var agent = await createAgentResponse.Content.ReadFromJsonAsync<AgentDto>();
+
+        var startDate = DateTime.UtcNow.AddDays(-7);
+        var endDate = DateTime.UtcNow;
+
+        // Act
+        var response = await _client.GetAsync(
+            $"/api/agents/{agent!.Id}/AgentExecution/export/json?startDate={startDate:O}&endDate={endDate:O}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+    }
+
     // Note: We cannot test actual execution without a valid Azure OpenAI configuration
     // That would require integration with real Azure services, which is beyond unit/integration testing
     // For real execution testing, we would need:
