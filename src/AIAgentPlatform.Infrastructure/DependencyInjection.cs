@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IAgentRepository, AgentRepository>();
         services.AddScoped<IConversationRepository, ConversationRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
+        services.AddScoped<IPluginRepository, PluginRepository>();
 
         // Register services
         services.AddSingleton<IPluginMetadataExtractor, PluginMetadataExtractor>();

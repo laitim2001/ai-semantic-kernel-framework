@@ -5,10 +5,13 @@ namespace AIAgentPlatform.Domain.ValueObjects;
 /// </summary>
 public sealed class PluginMetadata
 {
-    public IReadOnlyList<PluginFunction> Functions { get; }
-    public IDictionary<string, string> Properties { get; }
+    public IReadOnlyList<PluginFunction> Functions { get; private set; } = new List<PluginFunction>();
+    public IDictionary<string, string> Properties { get; private set; } = new Dictionary<string, string>();
 
     public static readonly PluginMetadata Empty = new(new List<PluginFunction>(), new Dictionary<string, string>());
+
+    // Parameterless constructor for EF Core
+    private PluginMetadata() { }
 
     public PluginMetadata(IReadOnlyList<PluginFunction> functions, IDictionary<string, string> properties)
     {
@@ -58,10 +61,13 @@ public sealed class PluginMetadata
 /// </summary>
 public sealed class PluginFunction
 {
-    public string Name { get; }
-    public string? Description { get; }
-    public IReadOnlyList<PluginParameter> Parameters { get; }
-    public string? ReturnType { get; }
+    public string Name { get; private set; } = string.Empty;
+    public string? Description { get; private set; }
+    public IReadOnlyList<PluginParameter> Parameters { get; private set; } = new List<PluginParameter>();
+    public string? ReturnType { get; private set; }
+
+    // Parameterless constructor for EF Core
+    private PluginFunction() { }
 
     public PluginFunction(string name, string? description, IReadOnlyList<PluginParameter> parameters, string? returnType = null)
     {
@@ -132,11 +138,14 @@ public sealed class PluginFunction
 /// </summary>
 public sealed class PluginParameter
 {
-    public string Name { get; }
-    public string Type { get; }
-    public string? Description { get; }
-    public bool IsRequired { get; }
-    public object? DefaultValue { get; }
+    public string Name { get; private set; } = string.Empty;
+    public string Type { get; private set; } = string.Empty;
+    public string? Description { get; private set; }
+    public bool IsRequired { get; private set; }
+    public object? DefaultValue { get; private set; }
+
+    // Parameterless constructor for EF Core
+    private PluginParameter() { }
 
     public PluginParameter(
         string name,
