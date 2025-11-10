@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AIAgentPlatform.Domain\AIAgentPlatform.Domain.csproj" />
     <ProjectReference Include="..\AIAgentPlatform.Application\AIAgentPlatform.Application.csproj" />
+    <ProjectReference Include="..\AIAgentPlatform.Shared\AIAgentPlatform.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
