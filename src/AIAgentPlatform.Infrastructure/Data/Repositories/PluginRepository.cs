@@ -49,7 +49,8 @@ public sealed class PluginRepository : IPluginRepository
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            query = query.Where(p => p.Status.ToString().Equals(status, StringComparison.OrdinalIgnoreCase));
+            // Compare Status.Value with the status string
+            query = query.Where(p => p.Status.Value == status);
         }
 
         if (!string.IsNullOrWhiteSpace(category))
@@ -119,7 +120,8 @@ public sealed class PluginRepository : IPluginRepository
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            query = query.Where(p => p.Status.ToString().Equals(status, StringComparison.OrdinalIgnoreCase));
+            // Compare Status.Value with the status string
+            query = query.Where(p => p.Status.Value == status);
         }
 
         if (!string.IsNullOrWhiteSpace(category))

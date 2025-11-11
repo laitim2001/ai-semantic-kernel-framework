@@ -54,34 +54,15 @@ public sealed class PluginConfiguration : IEntityTypeConfiguration<Plugin>
         });
 
         // Configure PluginMetadata as JSON column
-        builder.OwnsOne(p => p.Metadata, metadata =>
-        {
-            metadata.ToJson("Metadata");
-
-            metadata.OwnsMany(m => m.Functions, functions =>
-            {
-                functions.Property(f => f.Name).IsRequired();
-                functions.Property(f => f.Description);
-                functions.Property(f => f.ReturnType);
-
-                functions.OwnsMany(f => f.Parameters, parameters =>
-                {
-                    parameters.Property(p => p.Name).IsRequired();
-                    parameters.Property(p => p.Type).IsRequired();
-                    parameters.Property(p => p.Description);
-                    parameters.Property(p => p.IsRequired);
-                    parameters.Property(p => p.DefaultValue);
-                });
-            });
-
-            // Properties is stored as JSON
-            metadata.Property(m => m.Properties)
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                    v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, (JsonSerializerOptions?)null)
-                         ?? new Dictionary<string, string>()
-                );
-        });
+        // Serialize entire object to JSON string
+        builder.Property(p => p.Metadata)
+            .HasColumnName("Metadata")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => JsonSerializer.Deserialize<PluginMetadata>(v, (JsonSerializerOptions?)null)
+                     ?? PluginMetadata.Empty
+            );
 
         // Indexes for better query performance
         builder.HasIndex(p => p.PluginId)
