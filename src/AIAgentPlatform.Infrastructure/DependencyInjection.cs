@@ -1,6 +1,8 @@
+using AIAgentPlatform.Application.Interfaces;
 using AIAgentPlatform.Domain.Interfaces;
 using AIAgentPlatform.Infrastructure.Data;
 using AIAgentPlatform.Infrastructure.Data.Repositories;
+using AIAgentPlatform.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +33,10 @@ public static class DependencyInjection
         services.AddScoped<IAgentRepository, AgentRepository>();
         services.AddScoped<IConversationRepository, ConversationRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
+        services.AddScoped<IPluginRepository, PluginRepository>();
+
+        // Register services
+        services.AddSingleton<IPluginMetadataExtractor, PluginMetadataExtractor>();
 
         return services;
     }

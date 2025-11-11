@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -23,6 +24,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\AIAgentPlatform.Domain\AIAgentPlatform.Domain.csproj" />
     <ProjectReference Include="..\..\src\AIAgentPlatform.Application\AIAgentPlatform.Application.csproj" />
+    <ProjectReference Include="..\..\src\AIAgentPlatform.Infrastructure\AIAgentPlatform.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\AIAgentPlatform.Shared\AIAgentPlatform.Shared.csproj" />
   </ItemGroup>
 
 </Project>

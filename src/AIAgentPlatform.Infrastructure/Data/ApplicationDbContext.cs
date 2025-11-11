@@ -17,6 +17,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Agent> Agents => Set<Agent>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<Plugin> Plugins => Set<Plugin>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
