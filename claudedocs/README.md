@@ -35,37 +35,84 @@
 
 ### 2️⃣ `2-sprints/` - Sprint 詳細文檔
 
-**用途**: 每個 Sprint 的詳細規劃、進度和回顧
+**用途**: 每個 Sprint 的詳細規劃、執行追蹤和回顧
 
-**結構**:
+**結構** (每個 Sprint 包含 7 個標準文件):
 ```
 2-sprints/
 ├── sprint-1/
-│   ├── SPRINT-1-OVERVIEW.md        # Sprint 概覽 (已完成回顧)
-│   ├── SPRINT-1-PROGRESS.md        # 每日進度 (開發中使用)
-│   └── SPRINT-1-RETROSPECTIVE.md   # 回顧總結 (完成後)
+│   ├── SPRINT-1-OVERVIEW.md        # Sprint 概覽與高層指標
+│   ├── SPRINT-1-PLAN.md            # 詳細執行計劃與技術實施
+│   ├── SPRINT-1-CONTEXT.md         # 上下文參考與文檔引用
+│   ├── SPRINT-1-CHECKLIST.md       # 任務檢查清單與進度追蹤
+│   ├── SPRINT-1-DEV-LOG.md         # 開發日誌與問題記錄
+│   ├── SPRINT-1-ISSUES.md          # 問題追蹤與解決方案
+│   └── SPRINT-1-RETROSPECTIVE.md   # Sprint 回顧與經驗總結
 ├── sprint-2/
-│   ├── SPRINT-2-OVERVIEW.md        # Sprint 概覽 (進行中)
-│   └── SPRINT-2-PROGRESS.md        # 每日進度追蹤
+│   ├── SPRINT-2-1-OVERVIEW.md        # Sprint 2 概覽
+│   ├── SPRINT-2-2-PLAN.md            # Sprint 2 執行計劃
+│   ├── SPRINT-2-3-CONTEXT.md         # Sprint 2 上下文
+│   ├── SPRINT-2-4-CHECKLIST.md       # Sprint 2 任務清單
+│   ├── SPRINT-2-5-DEV-LOG.md         # Sprint 2 開發日誌
+│   ├── SPRINT-2-6-ISSUES.md          # Sprint 2 問題追蹤
+│   └── SPRINT-2-7-RETROSPECTIVE.md   # Sprint 2 回顧 (完成後)
 ...
-├── sprint-18/
-│   └── SPRINT-18-OVERVIEW.md       # Sprint 概覽 (規劃)
+├── sprint-21/
+│   └── [7 個標準文件]
 ```
 
-**OVERVIEW.md 包含**:
-- Sprint 目標和關鍵交付物
-- User Stories 計劃 (Story Points, 模組, 優先級)
-- 詳細技術任務分解
-- API 端點設計和數據模型
-- 測試策略 (單元/集成/E2E)
-- 驗收標準 (DoD - Definition of Done)
-- 關鍵風險和緩解策略
-- 依賴關係 (前置/後續 Sprint)
+**7 個標準文件說明**:
+
+1. **OVERVIEW.md** - Sprint 概覽
+   - Sprint 目標和關鍵交付物
+   - User Stories 計劃 (優先級、Story Points、狀態)
+   - 成功指標 (Definition of Done)
+   - 風險與依賴關係
+   - 進度統計與燃盡圖數據
+
+2. **PLAN.md** - 詳細執行計劃
+   - 本 Sprint 要建立什麼 (What to Build)
+   - 技術實施方案 (How to Build)
+   - API 規格、UI 設計、Database Schema
+   - 開發順序與階段劃分
+   - 編碼規範與參考文檔
+
+3. **CONTEXT.md** - 上下文參考
+   - 精簡引用 /docs 中的關鍵內容
+   - 避免 AI 助手在 180+ 文件中搜索
+   - 包含文檔位置、行號、快速參考
+
+4. **CHECKLIST.md** - 任務檢查清單
+   - 可標記進度的詳細任務列表
+   - 分類追蹤 (Backend、Frontend、Testing、Documentation)
+   - 完成度統計 (百分比)
+   - 實時更新狀態
+
+5. **DEV-LOG.md** - 開發日誌
+   - 每日開發記錄
+   - 遇到的問題與解決方案
+   - 學到的知識與經驗
+   - 進度追蹤與明日計劃
+
+6. **ISSUES.md** - 問題追蹤
+   - Open Issues (進行中的問題)
+   - Resolved Issues (已解決的問題)
+   - 問題嚴重性、重現步驟、根本原因分析
+   - 解決方案與相關 Commit
+
+7. **RETROSPECTIVE.md** - Sprint 回顧
+   - Sprint 指標統計
+   - 做得好的地方 (Keep)
+   - 需要改進的地方 (Improve)
+   - 學到的知識 (Insights)
+   - 下個 Sprint 的行動計劃
 
 **狀態標記**:
-- ✅ 已完成: Sprint 1
-- 🔄 進行中: Sprint 2 (40%, Day 14/27)
-- ⏳ 未開始: Sprint 3-18
+- ✅ 已完成: Sprint 1 (7 個文件完整)
+- 🔄 進行中: Sprint 2 (準備創建)
+- ⏳ 未開始: Sprint 3-21
+
+**模板位置**: `/claudedocs/templates/` 包含所有 7 個文件的標準模板
 
 ---
 
