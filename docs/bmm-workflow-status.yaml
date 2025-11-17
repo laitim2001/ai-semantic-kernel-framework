@@ -1,0 +1,70 @@
+# Workflow Status Template
+
+# This tracks progress through BMM methodology Analysis, Planning, and Solutioning phases.
+# Implementation phase is tracked separately in sprint-status.yaml
+
+# STATUS DEFINITIONS:
+# ==================
+# Initial Status (before completion):
+#   - required: Must be completed to progress
+#   - optional: Can be completed but not required
+#   - recommended: Strongly suggested but not required
+#   - conditional: Required only if certain conditions met (e.g., if_has_ui)
+#
+# Completion Status:
+#   - {file-path}: File created/found (e.g., "docs/product-brief.md")
+#   - skipped: Optional/conditional workflow that was skipped
+
+generated: "2025-11-16"
+updated: "2025-11-16"
+project: "microsoft-agent-framework-platform"
+project_type: "software"
+selected_track: "method"
+field_type: "greenfield"
+workflow_path: "method-greenfield.yaml"
+
+# Project History
+history:
+  - date: "2025-11-14"
+    event: "Initial project started as 'Semantic Kernel Agent Platform'"
+  - date: "2025-11-16"
+    event: "Major pivot to 'Microsoft Agent Framework Platform' due to framework release and multi-agent requirements"
+  - date: "2025-11-16"
+    event: "Previous work archived to archive/2025-11-16-sk-project/"
+  - date: "2025-11-16"
+    event: "Restarted BMAD workflow from brainstorming phase"
+
+workflow_status:
+  # Phase 0: Discovery
+  brainstorm-project: required  # agent: analyst - IN PROGRESS
+  product-brief: required  # agent: analyst
+
+  # Phase 1: Planning
+  prd: required  # agent: pm
+  validate-prd: required  # agent: pm
+  create-design: conditional  # agent: ux-designer
+
+  # Phase 2: Solutioning
+  create-architecture: required  # agent: architect
+  test-design: recommended  # agent: tea
+  validate-architecture: optional  # agent: architect
+  solutioning-gate-check: required  # agent: architect
+
+  # Phase 3: Implementation
+  sprint-planning: required  # agent: sm
+
+notes: |
+  專案重啟原因：
+  1. Microsoft Agent Framework 於 2024-11-14 正式發布
+  2. 該框架統一了 Semantic Kernel 和 AutoGen 的能力
+  3. 原生支持多 Agent 協作、工作流編排、檢查點、人機協作
+  4. 提供 Python 和 .NET 雙語支持，API 一致
+  5. 包含 DevUI 可視化開發工具
+  6. 客戶實際需求偏向多 Agent 協作場景
+  
+  技術方向：
+  - 核心框架：Microsoft Agent Framework
+  - 平台定位：Agent 和工作流編排管理平台
+  - 支持場景：單 Agent、多 Agent 協作、複雜工作流
+  
+  前期工作已歸檔至：archive/2025-11-16-sk-project/
