@@ -1,507 +1,220 @@
-# SCAMPER 創新分析 - Microsoft Agent Framework Platform
+# SCAMPER 創新分析 - 文檔導航
 
-## 會議資訊
-- **日期**: 2025-11-16
-- **時間**: Brainstorming Session 2
-- **參與者**: Product Owner, AI Assistant (Analyst)
-- **方法**: SCAMPER 創新思考技術
-- **基礎**: Mind Mapping (01-mind-mapping.md)
-- **狀態**: 進行中 (已完成 S - Substitute)
+> **文檔結構說明**：為了方便查閱，SCAMPER 分析已拆分為多個文件。
 
 ---
 
-## SCAMPER 簡介
+## 📂 文檔結構（兩層架構）
 
-**SCAMPER** 是一種創新思考技術,通過 7 個問題激發創意和改進:
+### 🎯 第一層：總覽文檔（日常查閱）
 
-- **S** - Substitute (替代): 有什麼可以替代?
-- **C** - Combine (結合): 可以結合什麼?
-- **A** - Adapt (調整): 可以從其他領域借鑒什麼?
-- **M** - Modify (修改): 可以放大/縮小什麼?
-- **P** - Put to other uses (用途): 可以有其他用途嗎?
-- **E** - Eliminate (消除): 可以移除什麼?
-- **R** - Reverse (顛倒): 可以反向思考嗎?
+**[02-scamper-method-overview.md](./02-scamper-method-overview.md)** (512 行)
 
----
+**內容**：
+- ✅ 28 個核心決策摘要
+- ✅ 6 個核心洞察
+- ✅ MVP 功能清單
+- ✅ 時間線規劃（12-14 週）
+- ✅ 快速導航到詳細文件
 
-## 分析參數
-
-### 🎯 分析目標
-**E. 全面分析** - 涵蓋所有維度:
-- 優化技術架構
-- 簡化 MVP 範圍
-- 發現創新功能
-- 降低風險
-- 商業化機會
-
-### 🔍 關注維度
-**全部 7 個維度**,特別關注:
-- S - Substitute: 技術選型替代方案
-- C - Combine: 技術結合創造新價值
-- A - Adapt: 從其他成功產品借鑒
-- M - Modify: 功能範圍調整
-- P - Put to other uses: 平台擴展場景
-- E - Eliminate: MVP 功能簡化
-- R - Reverse: 顛覆性思考
-
-### 📊 特定領域
-- 技術架構: 混合架構優化
-- 功能範圍: MVP 增減
-- 用戶體驗: 降低使用門檻
-- 商業模式: 商業化可能性
-- 開發策略: 快速穩定完成 MVP
-
-### 📝 輸出格式
-敘述式 - 詳細的文字分析和解釋
+**適用場景**：
+- 快速回顧所有決策
+- 了解 MVP 範圍
+- 查看時間線和優先級
+- 99% 的日常工作只需查閱此文件
 
 ---
 
-## 當前方案回顧 (來自 Mind Mapping)
+### 📚 第二層：詳細分析文檔（按需查閱）
 
-### 核心架構
-```
-React UI → Agent Framework Workflows (程式碼定義) → Python FastAPI Backend
-   ↓                    ↓                                  ↓
-PostgreSQL        State Manager                    系統整合層
-                  (Checkpointing)                  (ServiceNow,
-                                                    SharePoint,
-                                                    Dynamics 365)
+位於 **`02-scamper-details/`** 文件夾：
 
-n8n (輔助):
-- 定時觸發
-- Webhook 觸發
-- 可選的數據轉換
-```
+#### 1. S-substitute.md (654 行) - 技術選型評估
 
-### 核心能力
-- ✅ Agent 管理和執行 (Agent Framework)
-- ✅ 工作流編排 (Python 程式碼定義)
-- ✅ Checkpointing (Human-in-the-loop)
-- ✅ 企業系統整合 (微軟生態系)
-- ✅ 執行監控和歷史
+**內容**：Agent Framework vs n8n、工作流定義、Checkpointing 實現  
+**查看**：[02-scamper-details/S-substitute.md](./02-scamper-details/S-substitute.md) ✅ 已完成
 
-### MVP 場景
-- 🔴 場景 A: CS 工單處理 (優先)
-- 🔴 場景 D: IT 運維自動化 (優先)
+#### 2. C-combine.md (940 行) - 創新整合方案
+
+**內容**：跨系統關聯、Agent Marketplace、DevUI 整合  
+**查看**：[02-scamper-details/C-combine.md](./02-scamper-details/C-combine.md) ✅ 已完成
+
+#### 3. A-adapt.md (1,237 行) - 最佳實踐借鑒
+
+**內容**：學習 n8n、Dify、Dynamics 365、UiPath 等成功產品  
+**查看**：[02-scamper-details/A-adapt.md](./02-scamper-details/A-adapt.md) ✅ 已完成
+
+#### 4. MPER-optimize.md (1,153 行) - 功能調整與優化
+
+**內容**：M-P-E-R 四個維度的完整分析  
+**查看**：[02-scamper-details/MPER-optimize.md](./02-scamper-details/MPER-optimize.md) ✅ 已完成
 
 ---
 
-## S - Substitute (替代) ✅ 已完成
+## 📋 當前狀態
 
-> 問題: 有什麼元件可以被替代以獲得更好的結果?
+| 文件 | 狀態 | 行數 | 進度 |
+|------|------|------|------|
+| Overview | ✅ 完成 | 512 | 100% |
+| S-substitute.md | ✅ 完成 | 654 | 100% |
+| C-combine.md | ✅ 完成 | 940 | 100% |
+| A-adapt.md | ✅ 完成 | 1,237 | 100% |
+| MPER-optimize.md | ✅ 完成 | 1,153 | 100% |
 
-### 🎯 分析目標
-找出當前技術選型中可能存在的問題,以及是否有更好的替代方案。
+**說明**：
+- ✅ **所有文件已創建完成**！完整的兩層文檔結構已就緒
+- 📋 **日常使用**：使用 Overview (512 行) 快速查閱所有決策
+- 🔍 **深入研究**：需要細節時查看對應維度的詳細文件
+- 💾 **歷史備份**：原始完整文件已安全歸檔
 
 ---
 
-### 1. 核心技術選型評估
+## 🗂️ 歸檔文件
 
-#### 1.1 工作流引擎: n8n vs Agent Framework
+**[archive/02-scamper-method-original.md](./archive/02-scamper-method-original.md)** (2,998 行)
 
-**關鍵討論**: n8n 與 Agent Framework 整合的困難
+**內容**：原始合併版本，包含 S-C-A 三個維度的完整內容
 
-經過深入討論,發現整合的核心挑戰:
-1. **狀態同步問題**: n8n 工作流狀態 ≠ Agent Framework 執行狀態
-2. **Checkpointing 支持**: Agent Framework 的 Checkpointing 需要在 Agent 層面處理
-3. **長時間執行**: Agent 可能執行很久,n8n 可能 timeout
+**用途**：
+- 臨時查閱 S-C-A 詳細內容（直到獨立文件創建完成）
+- 歷史參考和 Git 追蹤
+- 備份完整記錄
 
-**原方案 (已否決)**:
-- n8n 作為主要工作流編排引擎
-- Agent Framework 作為執行工具
-- ❌ 問題: 無法支持 Checkpointing
+---
 
-**最終決策**: 🎯 **角色對調**
+## 🚀 使用指南
+
+### 場景 1：快速回顧決策
 
 ```
-Agent Framework 主導 (核心編排引擎)
-     ↓
-  純 Python 程式碼定義工作流
-     ↓
-  完整支持 Checkpointing
-     ↓
-  Human-in-the-loop 在 Agent 層面處理
+需求: 回顧某個決策
 
-n8n 輔助 (觸發和工具)
-     ↓
-  定時觸發 (Cron)
-     ↓
-  Webhook 觸發
-     ↓
-  可選的數據轉換
+步驟:
+1. 打開 02-scamper-method-overview.md
+2. Ctrl+F 搜索關鍵詞
+3. 查看決策摘要
+
+完成時間: < 1 分鐘 ✅
 ```
 
-**決策理由**:
-- ✅ 完整支持 Checkpointing (用戶要求,不妥協)
-- ✅ Agent 協作能力最強
-- ✅ 程式碼定義更靈活 (適合開發者)
-- ⚠️ 失去 n8n 可視化設計工作流
-- ✅ 但業務人員可通過 Web UI 觸發和監控
-
----
-
-#### 1.2 工作流定義方式
-
-**討論的選項**:
-
-**方式 A: 純程式碼** ✅ 最終選擇
-```python
-# Agent Framework 原生方式
-async def cs_ticket_workflow(ticket_id: str):
-    # Step 1: 分析 Ticket
-    ticket_info = await ticket_analyzer.run(
-        task=f"分析 Ticket #{ticket_id}"
-    )
-
-    # Step 2: 查詢客戶數據
-    customer_data = await customer_data_agent.run(
-        task=f"查詢客戶數據",
-        context=ticket_info
-    )
-
-    # Step 3: 生成解決方案
-    solution = await solution_generator.run(
-        task="生成解決方案",
-        context={"ticket": ticket_info, "customer": customer_data}
-    )
-
-    # Step 4: Checkpoint - Human-in-the-loop
-    checkpoint_id = await save_checkpoint({
-        "solution": solution,
-        "status": "pending_approval"
-    })
-
-    return {"checkpoint_id": checkpoint_id, "status": "waiting_for_approval"}
-
-# 批准後從 Checkpoint 恢復
-async def resume_from_approval(checkpoint_id: str, approved: bool):
-    checkpoint = await load_checkpoint(checkpoint_id)
-    if approved:
-        result = await action_agent.run(
-            task="執行解決方案",
-            context=checkpoint["solution"]
-        )
-        return {"status": "completed", "result": result}
-```
-
-**優勢**:
-- ✅ 完全靈活 (支持任何複雜邏輯)
-- ✅ IDE 支持 (自動完成、型別檢查)
-- ✅ 無需額外開發 (框架原生)
-- ✅ 快速 MVP (立即可用)
-
-**方式 B: YAML 配置** ❌ 未選擇
-- 需要開發 YAML 載入器 (1-2 週)
-- 複雜邏輯受限
-
-**方式 C: 可視化設計器** ❌ MVP 不做,Phase 2 考慮
-- 開發成本 3-4 週
-- 會延長 MVP 時間
-
-**最終決策**: ✅ **MVP 使用純程式碼,Phase 2 評估可視化設計器**
-
-**理由**:
-- ✅ 開發者用 Python 定義工作流 (快速靈活)
-- ✅ 業務人員通過 Web UI 觸發和監控 (不需要設計工作流)
-- ✅ 節省 3-4 週開發時間
-- ✅ MVP 時間保持 2-3 個月
-
----
-
-#### 1.3 Agent 框架: Microsoft Agent Framework
-
-**潛在風險評估**: Preview 版本的風險
-- ⚠️ API 可能變動 (破壞性更新)
-- ⚠️ 文檔可能不完整
-- ⚠️ 社群較小 (遇到問題難找解決方案)
-- ⚠️ 生產環境穩定性未知
-
-**替代選項考慮**:
-- **LangGraph**: 成熟穩定,但非微軟生態系
-- **AutoGen**: 微軟產品,但即將被取代
-- **Agent Framework**: 最新技術,但 Preview 版本
-
-**最終決策**: ✅ **堅持 Agent Framework,接受 Preview 風險**
-
-**決策理由**:
-- ✅ 戰略對齊 (微軟生態系)
-- ✅ 最新功能 (統一 SK + AutoGen)
-- ✅ 長期技術路線正確
-- ✅ 用戶願意承擔風險
-
-**風險緩解措施**:
-- 📝 密切關注 Agent Framework 更新
-- 📝 準備 API 變動的應對方案 (抽象層設計)
-- 📝 建立內部知識庫 (解決常見問題)
-- 📝 與微軟技術支持建立聯繫
-
----
-
-#### 1.4 其他技術棧
-
-**用戶確認滿意,不替代**:
-- ✅ **Backend**: Python FastAPI
-- ✅ **Frontend**: React + TypeScript
-- ✅ **Database**: PostgreSQL
-- ✅ **LLM**: Azure OpenAI
-
----
-
-### 2. 最終架構 (基於 Substitute 分析)
+### 場景 2：查看 M-P-E-R 詳細分析
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│              用戶介面層 (User Interface)                 │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  React Web UI:                                          │
-│  - Agent 管理 (查看預定義的 Agent)                       │
-│  - 工作流觸發 (一鍵啟動場景 A/D)                         │
-│  - 實時監控 Dashboard                                    │
-│  - Human-in-the-loop 審批介面                            │
-│  - 執行歷史和日誌                                        │
-│                                                          │
-│  n8n Web UI (輔助):                                     │
-│  - 定時任務設定                                          │
-│  - Webhook 配置                                         │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-                          ↓ REST API
-┌─────────────────────────────────────────────────────────┐
-│      核心編排層 (Agent Framework Workflows - Python)     │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  場景 A: CS 工單處理 (cs_ticket_workflow.py)             │
-│    Step 1: TicketAnalyzer Agent                         │
-│    Step 2: CustomerDataAgent (並行查詢)                 │
-│    Step 3: SolutionGenerator Agent                      │
-│    💾 Checkpoint: Human Approval                         │
-│    Step 4: ActionExecutor Agent                         │
-│                                                          │
-│  場景 D: IT 運維 (it_ops_workflow.py)                    │
-│    Step 1: AlertAnalyzer Agent                          │
-│    Step 2: DiagnosticAgent                              │
-│    Step 3: SolutionFinder Agent                         │
-│    Step 4: DecisionAgent                                │
-│    💾 Checkpoint: Human Approval (複雜問題)              │
-│    Step 5: ActionExecutor Agent                         │
-│                                                          │
-│  State Manager (PostgreSQL):                            │
-│  - Checkpointing 狀態保存                                │
-│  - 工作流執行歷史                                        │
-│  - Human-in-the-loop 審批記錄                            │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────┐
-│          Backend API Layer (Python FastAPI)             │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  REST API Endpoints:                                    │
-│  - POST /api/workflows/{workflow_name}/execute          │
-│  - GET  /api/executions/{execution_id}/status           │
-│  - POST /api/checkpoints/{checkpoint_id}/approve        │
-│  - GET  /api/executions (歷史)                          │
-│                                                          │
-│  Agent Framework Runtime:                               │
-│  - 載入和執行 Python 工作流                              │
-│  - 管理 Checkpointing (State Manager)                   │
-│  - 處理 Human-in-the-loop 狀態                           │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────┐
-│          系統整合層 (Connectors)                         │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  - ServiceNow Connector (Incident CRUD)                 │
-│  - SharePoint Connector (知識庫搜尋)                     │
-│  - Dynamics 365 CE Connector (客戶資料)                  │
-│  - MSSQL / PostgreSQL Connector                         │
-│  - n8n API (可選,觸發 n8n 工作流)                        │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────┐
-│              數據層 (PostgreSQL)                         │
-├─────────────────────────────────────────────────────────┤
-│  - Agent 配置                                            │
-│  - 工作流執行歷史                                        │
-│  - Checkpoint 狀態                                      │
-│  - 審批記錄                                              │
-└─────────────────────────────────────────────────────────┘
+需求: 了解功能優化策略
+
+步驟:
+1. 打開 02-scamper-details/MPER-optimize.md
+2. 查看 M-P-E-R 四個維度的完整討論
+
+完成時間: 按需查閱 ✅
+```
+
+### 場景 3：查看技術選型細節
+
+```
+需求: 了解為什麼選擇 Agent Framework 而不是 n8n
+
+步驟:
+1. 打開 02-scamper-details/S-substitute.md
+2. 查看「1.1 工作流引擎: n8n vs Agent Framework」章節
+3. 閱讀完整討論過程和決策理由
+
+完成時間: 5-10 分鐘 ✅
+```
+
+### 場景 4：學習成功產品的實踐
+
+```
+需求: 了解從 n8n 借鑒了哪些功能
+
+步驟:
+1. 打開 02-scamper-details/A-adapt.md
+2. 搜索 "n8n" 章節
+3. 查看 4 個具體借鑒點和實現建議
+
+完成時間: 3-5 分鐘 ✅
 ```
 
 ---
 
-### 3. Substitute 維度核心發現
+## 📊 文檔統計
 
-#### ✅ 不建議替代的項目
-
-| 元件 | 原方案 | 是否替代? | 最終決定 |
-|------|--------|----------|---------|
-| **工作流引擎** | n8n | ❌ 不替代,角色調整 | Agent Framework 主導<br>n8n 輔助 (觸發+工具) |
-| **Agent 框架** | Agent Framework | ❌ 不替代 | 堅持,接受 Preview 風險 |
-| **工作流定義** | 待定 | ✅ 選定 | 純 Python 程式碼 |
-| **Checkpointing** | 待定 | ✅ 必須支持 | 完整實施 (不簡化) |
-| **Backend** | Python FastAPI | ❌ 不替代 | 保持 |
-| **Frontend** | React | ❌ 不替代 | 保持 |
-| **Database** | PostgreSQL | ❌ 不替代 | 保持 |
+| 文件類型 | 行數 | 用途 | 查閱頻率 |
+|---------|------|------|---------|
+| **Overview** | 512 | 決策摘要、快速導航 | ⭐⭐⭐⭐⭐ 極高 |
+| **S-substitute** | 654 | 技術選型詳細分析 | ⭐⭐⭐ 中 |
+| **C-combine** | 940 | 創新整合詳細設計 | ⭐⭐⭐ 中 |
+| **A-adapt** | 1,237 | 最佳實踐詳細說明 | ⭐⭐⭐⭐ 高 |
+| **MPER-optimize** | 1,153 | 功能優化詳細策略 | ⭐⭐⭐ 中 |
+| **Original (歸檔)** | 2,998 | 歷史完整記錄 | ⭐ 低（備份） |
 
 ---
 
-#### 💡 核心洞察
+## ✅ 已完成的工作
 
-**洞察 1: 簡化才能快速** 🚀
-- ✅ 不開發可視化設計器 (節省 3-4 週)
-- ✅ Agent Framework 純程式碼 (靈活快速)
-- ✅ 開發者主導,業務人員使用
-- 📉 MVP 時間: 保持 **2-3 個月**
+1. ✅ 創建文件夾結構
+   - `02-scamper-details/` 詳細分析文件夾
+   - `archive/` 歸檔文件夾
 
-**洞察 2: n8n 的新定位** 🔄
-- 從主角 → 配角
-- 但仍有價值: 定時觸發、Webhook、數據轉換
-- Agent Framework 可以調用 n8n (靈活整合)
+2. ✅ 完成核心文件
+   - `02-scamper-method-overview.md`（決策總覽）
+   - `02-scamper-details/MPER-optimize.md`（M-P-E-R 完整分析）
 
-**洞察 3: Preview 版本風險可控** ✅
-- 微軟官方產品 (有支持)
-- 戰略對齊 (長期技術路線)
-- 風險緩解: 抽象層設計、社群參與
+3. ✅ 歸檔原始文件
+   - `archive/02-scamper-method-original.md`（2,998 行完整內容）
 
-**洞察 4: Checkpointing 不妥協** 💾
-- Human-in-the-loop 是核心需求
-- 必須在 Agent 層面處理 (不簡化)
-- Agent Framework 原生支持 (State Manager)
+4. ✅ 文檔導航
+   - 本文件提供清晰的文檔結構說明
 
 ---
 
-### 4. 行動建議 (基於 Substitute 分析)
+## ✅ 已完成所有工作
 
-#### 立即行動 (Week 1-2)
-1. ✅ **確定架構**: Agent Framework 主導,n8n 輔助
-2. ✅ **開發環境設置**: Agent Framework Python SDK
-3. ✅ **State Manager 配置**: PostgreSQL Checkpointing
-4. ✅ **定義第一個工作流**: 場景 A (CS 工單) Python 程式碼
+所有 SCAMPER 詳細文件已創建完成：
 
-#### 短期行動 (Week 3-4)
-1. 📝 **n8n 整合**: 設置定時觸發和 Webhook
-2. 📝 **Web UI 基礎**: React 觸發和監控介面
-3. 📝 **Human-in-the-loop UI**: 審批介面開發
+1. ✅ **S-substitute.md** (654 行) - 技術選型評估
+2. ✅ **C-combine.md** (940 行) - 創新整合方案
+3. ✅ **A-adapt.md** (1,237 行) - 最佳實踐借鑒
+4. ✅ **MPER-optimize.md** (1,153 行) - 功能優化策略
 
-#### 中期評估 (Phase 2)
-1. 🔮 **評估可視化設計器**: 是否需要開發
-2. 🔮 **Agent Framework 穩定性**: Preview → GA 版本
-3. 🔮 **n8n 使用情況**: 評估實際價值
+**文檔結構已完全優化**：
+- 兩層清晰架構（Overview + 4 個詳細文件）
+- 原始文件安全歸檔
+- 所有導航鏈接已更新
 
 ---
 
-## C - Combine (結合) ⏳ 待進行
+## 🎯 核心優勢
 
-> 問題: 可以結合哪些元件或概念以創造新價值?
+### ✅ 當前已實現
 
-**預計分析內容**:
-- Agent Framework + 其他技術的創新整合
-- 跨系統智能協作 (ServiceNow + Dynamics + SharePoint)
-- 可能的產品化機會
-- 獨特的差異化功能
+- **快速查閱**：Overview 512 行包含所有 28 個決策
+- **M-P-E-R 詳細分析**：獨立文件 1,153 行，清晰完整
+- **歷史完整保存**：原始 2,998 行文件安全歸檔
 
----
+### ✅ 解決的問題
 
-## A - Adapt (調整) ⏳ 待進行
-
-> 問題: 可以從其他領域或產品借鑒什麼?
-
-**預計分析內容**:
-- 從 Zapier、n8n 等工作流平台借鑒
-- 從 Datadog 等監控平台借鑒
-- 從 GitHub Copilot 等 AI 工具借鑒
-- 企業軟件的最佳實踐
+- ❌ 原始文件 2,998 行太長 → ✅ 拆分為兩層結構
+- ❌ 查閱不便 → ✅ Overview 提供快速導航
+- ❌ M-P-E-R 內容缺失 → ✅ 完整分析已添加
 
 ---
 
-## M - Modify (修改) ⏳ 待進行
+## 📝 下一步
 
-> 問題: 可以放大/縮小或修改哪些特性?
+**SCAMPER 分析已完成 ✅**
 
-**預計分析內容**:
-- 功能放大 (Magnify)
-- 功能縮小 (Minimize)
-- 功能修改 (Modify)
-- MVP 範圍調整
+**進入下一階段**：Product Brief（產品簡介）
 
----
-
-## P - Put to Other Uses (用途) ⏳ 待進行
-
-> 問題: 平台或技術可以應用到其他場景嗎?
-
-**預計分析內容**:
-- 新業務場景 (HR、Marketing、Legal)
-- 新技術用途 (RPA 替代)
-- 新商業模式 (SaaS、AaaS)
+預計時間：3-5 天  
+主要內容：
+- 產品願景和目標
+- 目標用戶和市場定位
+- 核心功能詳述
+- 技術架構總結
+- 開發路線圖（12-14 週）
+- 成功指標定義
 
 ---
 
-## E - Eliminate (消除) ⏳ 待進行
-
-> 問題: 可以移除哪些複雜度或不必要的功能?
-
-**預計分析內容**:
-- 技術複雜度消除
-- 功能複雜度消除
-- UI 複雜度消除
-- MVP 簡化建議
-
----
-
-## R - Reverse (顛倒) ⏳ 待進行
-
-> 問題: 可以反向思考或顛倒順序嗎?
-
-**預計分析內容**:
-- 開發順序顛倒
-- 技術架構顛倒
-- 商業模式顛倒
-- 用戶交互顛倒
-
----
-
-## 🎯 當前進度
-
-- ✅ **S - Substitute** 已完成
-- ⏳ **C - Combine** 待進行
-- ⏳ **A - Adapt** 待進行
-- ⏳ **M - Modify** 待進行
-- ⏳ **P - Put to Other Uses** 待進行
-- ⏳ **E - Eliminate** 待進行
-- ⏳ **R - Reverse** 待進行
-
-**完成度**: 1/7 (14%)
-
-**預計剩餘時間**: 30-40 分鐘 (深度分析)
-
----
-
-## 附錄
-
-### 相關文檔
-- [Mind Mapping](./01-mind-mapping.md) - 專案基礎分析
-- [bmm-workflow-status.yaml](../../bmm-workflow-status.yaml) - BMAD 工作流狀態
-
-### 決策記錄
-
-**決策 1**: Agent Framework 主導,n8n 輔助
-- **日期**: 2025-11-16
-- **理由**: 完整支持 Checkpointing,保持 Agent 協作能力
-
-**決策 2**: MVP 使用純程式碼定義工作流
-- **日期**: 2025-11-16
-- **理由**: 快速 MVP,節省 3-4 週開發時間
-
-**決策 3**: 堅持 Agent Framework Preview
-- **日期**: 2025-11-16
-- **理由**: 戰略對齊,接受風險,風險可控
-
----
-
-**下次繼續**: C - Combine (結合) 維度分析
+**返回**：[Overview](./02-scamper-method-overview.md) | [BMAD Workflow Status](../../bmm-workflow-status.yaml)
