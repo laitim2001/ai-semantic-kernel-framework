@@ -1,7 +1,14 @@
 # Sprint 1: Core Services Development - 詳細規劃
 
-**版本**: 1.0  
+> ℹ️ **開發策略**: 本 Sprint 採用**本地優先開發**  
+> 🐳 **開發環境**: Docker Compose (PostgreSQL, Redis, RabbitMQ)  
+> 🔐 **認證方式**: Mock Authentication (無需 Azure AD)  
+> 📊 **消息隊列**: RabbitMQ (本地容器)  
+> 💰 **成本**: $0 Azure 費用 + OpenAI API (~$20/月)
+
+**版本**: 1.1 (Local-First)  
 **創建日期**: 2025-11-19  
+**更新日期**: 2025-11-20  
 **Sprint 期間**: 2025-12-09 至 2025-12-20 (2週)  
 **團隊規模**: 8人 (3後端主導, 2前端支持, 1 DevOps, 1 QA, 1 PO)
 

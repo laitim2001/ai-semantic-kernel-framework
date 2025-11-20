@@ -1,7 +1,14 @@
 # Sprint 2: Integrations & Extensions - 詳細規劃
 
-**版本**: 1.0  
+> ℹ️ **開發策略**: 本 Sprint 繼續**本地優先開發**  
+> 🐳 **開發環境**: Docker Compose (完全本地)  
+> 🔔 **通知方式**: Console/Mock Teams Notifications (Phase 1)  
+> 📁 **文件存儲**: 本地文件系統 (Phase 1) → Azure Blob (Phase 2)  
+> 💰 **成本**: $0 Azure 費用
+
+**版本**: 1.1 (Local-First)  
 **創建日期**: 2025-11-19  
+**更新日期**: 2025-11-20  
 **Sprint 期間**: 2025-12-23 至 2026-01-03 (2週)  
 **團隊規模**: 8人
 

@@ -1,7 +1,14 @@
 # Sprint 3: Security & Observability - 詳細規劃
 
-**版本**: 1.0  
+> ℹ️ **開發策略**: 本 Sprint 完成**本地開發階段** (Phase 1)  
+> 🔐 **認證方式**: Mock Auth (開發) → Azure AD 準備 (Phase 2)  
+> 📊 **監控方案**: Console Logging + 簡單 Metrics (Phase 1)  
+> 🔒 **Secrets 管理**: .env 文件 (Phase 1) → Azure Key Vault (Phase 2)  
+> 💰 **成本**: $0 Azure 費用
+
+**版本**: 1.1 (Local-First)  
 **創建日期**: 2025-11-19  
+**更新日期**: 2025-11-20  
 **Sprint 期間**: 2026-01-06 至 2026-01-17 (2週)  
 **團隊規模**: 8人
 

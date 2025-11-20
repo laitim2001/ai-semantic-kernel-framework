@@ -1,6 +1,10 @@
 # Sprint 0: Infrastructure & Foundation - MVP 調整版
 
-**版本**: 1.1 (MVP 調整版)  
+> ⚠️ **重要提示**: 本文檔為 **Phase 2 (雲端部署)** 參考文檔  
+> 📄 **開發階段請使用**: [Sprint 0 本地開發版](./sprint-0-local-development.md)  
+> 🔄 **適用時機**: Sprint 4+ 集成測試/生產環境部署
+
+**版本**: 1.1 (MVP 調整版 - Phase 2 Reference)  
 **創建日期**: 2025-11-20  
 **Sprint 期間**: 2025-11-25 至 2025-12-06 (2週)  
 **團隊規模**: 8人 (3後端, 2前端, 1 DevOps, 1 QA, 1 PO)
