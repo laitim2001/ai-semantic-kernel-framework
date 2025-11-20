@@ -12,16 +12,27 @@
 基於 MVP 快速上線的策略，Sprint 0 進行以下調整：
 
 ### 主要變更
-1. **部署平台**: Kubernetes (AKS) → **Azure App Service** (MVP 階段)
-2. **消息隊列**: RabbitMQ → **Azure Service Bus** (托管服務)
-3. **監控方案**: Prometheus + Grafana → **混合方案**（Azure Monitor + App Insights + Prometheus）
-4. **日誌方案**: ELK Stack → **Application Insights** (內建集成)
+
+#### Phase 1: 本地開發（Sprint 0-3）✅ 當前階段
+1. **開發環境**: Docker Compose（完全本地）
+2. **消息隊列**: **RabbitMQ** (本地 Docker 容器)
+3. **認證方式**: **Mock Authentication** (無需 Azure AD)
+4. **日誌方案**: **Console Logging** (標準輸出)
+5. **成本**: **$0 Azure 費用** (僅 OpenAI API ~$20/月)
+
+#### Phase 2: 雲端部署（Sprint 4+ 集成測試/生產）
+1. **部署平台**: Kubernetes (AKS) → **Azure App Service**
+2. **消息隊列**: RabbitMQ → **Azure Service Bus**
+3. **認證方式**: Mock → **Azure AD OAuth 2.0**
+4. **監控方案**: Console → **Application Insights + Azure Monitor**
+5. **成本**: ~$123-143/月
 
 ### 調整理由
+- ✅ **零 Azure 成本**: 開發階段完全本地，省下 3 個月 $114 訂閱費
+- ✅ **快速迭代**: 無網絡延遲，本地調試方便
 - ✅ **降低複雜度**: 無需學習 Kubernetes，專注業務邏輯
-- ✅ **加快上線**: App Service 5分鐘部署 vs K8s 需要 1-2 週
-- ✅ **降低成本**: ~$113/月 vs K8s ~$300+/月
-- ✅ **減少運維**: 托管服務自動處理 HA、備份、監控
+- ✅ **離線開發**: 不依賴網絡連接，適合任何環境
+- ✅ **平滑遷移**: 代碼無需修改，僅切換環境變量
 
 ### 後期擴展路徑
 當 MVP 驗證成功，業務需要更高彈性時，可遷移到 Kubernetes：
@@ -34,16 +45,20 @@
 
 ## 📊 調整後的 Story Points
 
-**總計劃點數**: 38 (調整前: 42)  
-**減少原因**: Service Bus/App Service 配置比 K8s+RabbitMQ 簡單
+**總計劃點數**: 33 (調整前: 42 → 38 → 33)  
+**減少原因**: 
+- 完全本地開發，無需 Azure 資源配置
+- 使用 RabbitMQ 替代 Service Bus（更簡單）
+- Mock 認證替代 Azure AD（開發階段）
+- Console 日誌替代 Application Insights
 
 **按優先級分配**:
-- P0 (Critical): 30 點 (79%)
-- P1 (High): 8 點 (21%)
+- P0 (Critical): 28 點 (85%)
+- P1 (High): 5 點 (15%)
 
 **按團隊分配**:
-- DevOps: 18 點 (47%)
-- Backend: 20 點 (53%)
+- DevOps: 13 點 (39%)
+- Backend: 20 點 (61%)
 
 ---
 
@@ -56,16 +71,18 @@
 **依賴**: 無
 
 #### 描述
-配置本地開發環境，使用 Docker Compose 編排所有服務。
+配置**完全本地**開發環境，使用 Docker Compose 編排所有服務，無需任何 Azure 資源。
 
 #### 驗收標準
-- [ ] Docker Compose 配置完成，包含:
-  - PostgreSQL 16
-  - Redis 7
-  - Azure Service Bus Emulator (可選) 或直接用 Azure 開發環境
+- [x] Docker Compose 配置完成，包含: ✅ **已完成**
+  - PostgreSQL 16 (本地容器)
+  - Redis 7 (本地容器)
+  - **RabbitMQ 3.12** (本地容器，替代 Azure Service Bus)
   - Backend API (Python FastAPI)
-- [ ] README 包含本地環境設置指南 (< 15 分鐘完成)
-- [ ] 環境變量模板 (.env.example)
+- [x] README 包含本地環境設置指南 (< 15 分鐘完成) ✅ **已完成**
+- [x] 環境變量模板 (.env.example) ✅ **已完成**
+- [x] 本地開發指南 (local-development-guide.md) ✅ **已完成**
+- [ ] RabbitMQ Management UI 可訪問 (http://localhost:15672)
 
 #### 技術實現
 ```yaml
