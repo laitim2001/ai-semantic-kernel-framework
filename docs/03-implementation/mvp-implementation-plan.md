@@ -1,7 +1,13 @@
 # IPA Platform - MVP Implementation Plan (項目執行計劃)
 
-**版本**: 1.0  
+> 📌 **更新說明** (2025-11-20): 本文檔已調整為 MVP 版本  
+> - **部署方案**: Kubernetes → **Azure App Service**  
+> - **消息隊列**: RabbitMQ → **Azure Service Bus**  
+> - **監控方案**: ELK Stack → **Application Insights + Azure Monitor**
+
+**版本**: 1.1 (MVP Revised)  
 **創建日期**: 2025-11-19  
+**更新日期**: 2025-11-20  
 **項目週期**: 12週 (2025-11-25 至 2026-02-14)  
 **團隊規模**: 8人
 
@@ -67,21 +73,21 @@ Infrastructure         Core Services           Integrations            UI + Test
 ### 里程碑 1: 基礎設施就緒 (Week 2)
 **日期**: 2025-12-06  
 **交付物**:
-- ✅ Kubernetes 集群運行 (Staging + Production)
+- ✅ Azure App Service 運行 (Staging + Production)
 - ✅ CI/CD 流水線自動化部署
-- ✅ PostgreSQL + Redis + RabbitMQ 運行
+- ✅ Azure PostgreSQL + Redis + Service Bus 運行
 - ✅ OAuth 2.0 身份驗證工作
-- ✅ 監控和日誌基礎設施就緒
+- ✅ Application Insights 監控和日誌就緒
 
 **驗收標準**:
 - [ ] 所有開發人員可以本地運行完整棧
 - [ ] 代碼提交自動觸發 CI/CD
-- [ ] Prometheus + Grafana 顯示系統指標
+- [ ] Azure Monitor 和 App Insights 顯示系統指標
 - [ ] 可以使用 Azure AD 登錄測試環境
 
 **阻礙因素**:
-- 🔴 Azure 集群配置延遲
-- 🟡 團隊 Kubernetes 學習曲線
+- 🟡 Azure Service Principal 權限配置
+- 🟢 無 K8s 學習曲線（已簡化）
 
 ---
 
