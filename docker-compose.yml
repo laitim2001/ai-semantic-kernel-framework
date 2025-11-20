@@ -42,6 +42,27 @@ services:
       - ipa-network
     restart: unless-stopped
 
+  # RabbitMQ (本地開發用 - 代替 Azure Service Bus)
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: ipa-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "15672:15672"  # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ipa-network
+    restart: unless-stopped
+
   # Backend API (FastAPI)
   backend:
     build:
@@ -58,8 +79,15 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password}
       
-      # Azure Service Bus (使用 Azure 開發環境)
-      AZURE_SERVICE_BUS_CONNECTION_STRING: ${AZURE_SERVICE_BUS_CONNECTION_STRING}
+      # Message Queue Configuration
+      # 本地開發: 使用 RabbitMQ
+      # 生產環境: 使用 Azure Service Bus (設置 MESSAGE_QUEUE_TYPE=azure_service_bus)
+      MESSAGE_QUEUE_TYPE: ${MESSAGE_QUEUE_TYPE:-rabbitmq}
+      RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      AZURE_SERVICE_BUS_CONNECTION_STRING: ${AZURE_SERVICE_BUS_CONNECTION_STRING:-}
       
       # Azure AD OAuth
       AZURE_AD_TENANT_ID: ${AZURE_AD_TENANT_ID}
@@ -86,6 +114,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - ipa-network
@@ -116,6 +146,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  rabbitmq_data:
     driver: local
   backend_cache:
     driver: local
