@@ -30,18 +30,23 @@ team:
 # Sprint Overview
 sprints:
   sprint_0:
-    name: "Sprint 0: Infrastructure & Foundation"
+    name: "Sprint 0: Infrastructure & Foundation (MVP Revised)"
     status: "not-started"
     start_date: "2025-11-25"
     end_date: "2025-12-06"
     goals:
-      - "Set up development, staging, and production environments"
-      - "Implement CI/CD pipeline with automated testing"
+      - "Set up development environment with Docker Compose"
+      - "Configure Azure App Service for staging and production"
+      - "Implement CI/CD pipeline for App Service deployment"
       - "Initialize database schema and migration framework"
       - "Set up authentication and authorization framework"
-      - "Configure monitoring and logging infrastructure"
+      - "Configure hybrid monitoring (Azure Monitor + App Insights + Prometheus)"
     
-    planned_story_points: 42
+    notes: |
+      MVP調整: 使用 Azure App Service 替代 Kubernetes，簡化部署複雜度
+      詳細規劃參考: docs/03-implementation/sprint-planning/sprint-0-mvp-revised.md
+    
+    planned_story_points: 38
     completed_story_points: 0
     
     backlog:
@@ -54,49 +59,54 @@ sprints:
         priority: "P0 - Critical"
         
       - id: "S0-2"
-        title: "Kubernetes Cluster Setup"
-        description: "Set up AKS cluster for staging and production with RBAC"
-        story_points: 8
+        title: "Azure App Service Setup"
+        description: "Set up App Service Plan and instances for staging and production"
+        story_points: 5
         assignee: "DevOps"
         status: "not-started"
         priority: "P0 - Critical"
         dependencies: []
+        notes: "Replaced Kubernetes with App Service for MVP simplicity"
         
       - id: "S0-3"
-        title: "CI/CD Pipeline Implementation"
-        description: "Create GitHub Actions workflows for build, test, security scan, deploy"
-        story_points: 8
+        title: "CI/CD Pipeline for App Service"
+        description: "Create GitHub Actions workflows for App Service deployment"
+        story_points: 5
         assignee: "DevOps"
         status: "not-started"
         priority: "P0 - Critical"
         dependencies: ["S0-2"]
+        notes: "Simplified pipeline for App Service vs Kubernetes"
         
       - id: "S0-4"
         title: "Database Infrastructure"
-        description: "Set up PostgreSQL 16 with replication, initialize schema, configure migrations"
+        description: "Set up Azure PostgreSQL Flexible Server, initialize schema, configure migrations"
         story_points: 5
         assignee: "Backend"
         status: "not-started"
         priority: "P0 - Critical"
-        dependencies: ["S0-2"]
+        dependencies: []
+        notes: "Using Azure managed PostgreSQL"
         
       - id: "S0-5"
         title: "Redis Cache Setup"
-        description: "Configure Redis 7 cluster for caching and session management"
+        description: "Configure Azure Cache for Redis for caching and session management"
         story_points: 3
         assignee: "Backend"
         status: "not-started"
         priority: "P0 - Critical"
-        dependencies: ["S0-2"]
+        dependencies: []
+        notes: "Using Azure managed Redis"
         
       - id: "S0-6"
         title: "Message Queue Setup"
-        description: "Deploy RabbitMQ 3.12 with persistence and monitoring"
+        description: "Configure Azure Service Bus with queues and dead letter queue"
         story_points: 3
         assignee: "Backend"
         status: "not-started"
         priority: "P0 - Critical"
-        dependencies: ["S0-2"]
+        dependencies: []
+        notes: "Replaced RabbitMQ with Azure Service Bus (managed service)"
         
       - id: "S0-7"
         title: "Authentication Framework"
@@ -108,31 +118,37 @@ sprints:
         dependencies: ["S0-4"]
         
       - id: "S0-8"
-        title: "Monitoring Stack"
-        description: "Deploy Prometheus, Grafana, and configure initial dashboards"
+        title: "Monitoring Setup (Hybrid)"
+        description: "Configure Azure Monitor + Application Insights + optional Prometheus"
         story_points: 5
         assignee: "DevOps"
         status: "not-started"
         priority: "P1 - High"
         dependencies: ["S0-2"]
+        notes: "Hybrid approach: Azure Monitor (基礎) + Prometheus (自定義業務指標)"
         
       - id: "S0-9"
-        title: "Logging Infrastructure"
-        description: "Set up ELK stack (Elasticsearch, Logstash, Kibana) for centralized logging"
-        story_points: 5
+        title: "Application Insights Logging"
+        description: "Configure Application Insights for centralized logging and tracing"
+        story_points: 3
         assignee: "DevOps"
         status: "not-started"
         priority: "P1 - High"
         dependencies: ["S0-2"]
+        notes: "Replaced ELK Stack with Application Insights (built-in integration)"
         
     risks:
-      - description: "Kubernetes cluster provisioning delays"
-        severity: "high"
-        mitigation: "Start AKS provisioning immediately, use Azure free credits"
-        
-      - description: "Team learning curve on new infrastructure"
+      - description: "Azure Service Principal permissions"
         severity: "medium"
-        mitigation: "Schedule infrastructure training sessions, create setup documentation"
+        mitigation: "Create Service Principal with proper roles early, test CI/CD pipeline"
+        
+      - description: "Application Insights learning curve (KQL queries)"
+        severity: "low"
+        mitigation: "Provide KQL query examples, Azure Monitor documentation"
+        
+      - description: "Service Bus vs RabbitMQ API differences"
+        severity: "low"
+        mitigation: "Create abstraction layer for future migration flexibility"
     
     blockers: []
     

@@ -1,6 +1,10 @@
 # Sprint 0: Infrastructure & Foundation - 詳細規劃
 
-**版本**: 1.0  
+> ⚠️ **重要提示**: 本文檔為原始 Kubernetes 版本規劃，已被 MVP 調整版替代  
+> 📄 **最新版本**: [Sprint 0 MVP Revised](./sprint-0-mvp-revised.md)  
+> 🔄 **主要變更**: Kubernetes → Azure App Service, RabbitMQ → Service Bus, ELK → App Insights
+
+**版本**: 1.0 (已過時 - Superseded)  
 **創建日期**: 2025-11-19  
 **Sprint 期間**: 2025-11-25 至 2025-12-06 (2週)  
 **團隊規模**: 8人 (3後端, 2前端, 1 DevOps, 1 QA, 1 PO)

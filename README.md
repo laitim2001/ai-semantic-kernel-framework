@@ -150,13 +150,24 @@ Agent 從人工修正中學習：
 
 ### 核心組件
 
+#### MVP 階段 (當前)
+
 | 組件 | 職責 | 技術棧 |
 |------|------|--------|
-| **Workflow Service** | 工作流 CRUD、版本管理 | FastAPI 0.100+, SQLAlchemy |
-| **Execution Service** | 執行狀態機、步驟編排 | Python-statemachine |
-| **Agent Service** | Semantic Kernel 集成、Tool 管理 | Microsoft Semantic Kernel |
-| **API Gateway** | 認證、限流、路由 | Kong 3.4 |
-| **Message Queue** | 異步任務、事件驅動 | RabbitMQ 3.12 |
+| **Backend App** | 統一後端服務（合併 Workflow/Execution/Agent） | Python 3.11+, FastAPI 0.100+ |
+| **Workflow Module** | 工作流 CRUD、版本管理 | SQLAlchemy, Pydantic |
+| **Execution Module** | 執行狀態機、步驟編排 | Python-statemachine |
+| **Agent Module** | Semantic Kernel 集成、Tool 管理 | Microsoft Semantic Kernel Python SDK |
+| **Message Queue** | 異步任務、事件驅動 | Azure Service Bus (Basic) |
+
+#### 生產擴展 (MVP 後)
+
+| 組件 | 職責 | 技術棧 |
+|------|------|--------|
+| **Microservices** | 獨立拆分為 3 個服務 | Workflow/Execution/Agent (各自擴展) |
+| **API Gateway** | 認證、限流、路由 | Kong / Nginx Ingress |
+| **Message Queue** | 更靈活的消息路由 | RabbitMQ 3.12 (可選) |
+| **Orchestration** | 容器編排 | Kubernetes (AKS) |
 
 ---
 
@@ -186,15 +197,26 @@ Agent 從人工修正中學習：
 
 ### Infrastructure
 
+#### MVP 階段
+
 | 技術 | 版本 | 用途 |
 |------|------|------|
+| **Azure App Service** | Standard S1 | 後端應用托管 |
+| **Azure PostgreSQL** | Flexible 16 | 主數據庫 |
+| **Azure Redis Cache** | Basic C0 | 緩存/Session |
+| **Azure Service Bus** | Basic | 消息隊列 |
+| **Application Insights** | - | 日誌、追蹤、監控 |
+| **Azure Monitor** | - | 基礎監控 |
+| **Prometheus + Grafana** | Optional | 自定義業務指標 |
+
+#### 生產擴展 (MVP 後)
+
+| 技術 | 版本 | 用達 |
+|------|------|------|
 | **Kubernetes (AKS)** | 1.28+ | 容器編排 |
-| **PostgreSQL** | 16+ | 主數據庫 |
-| **Redis** | 7.0+ | 緩存/Session |
-| **RabbitMQ** | 3.12+ | 消息隊列 |
-| **Prometheus** | 2.45+ | 監控指標 |
-| **Grafana** | 10.0+ | 儀表板 |
-| **ELK Stack** | 8.10+ | 日誌分析 |
+| **RabbitMQ** | 3.12+ | 高級消息路由 |
+| **Prometheus + Grafana** | 2.45+ / 10.0+ | 完整監控棧 |
+| **ELK Stack** | 8.10+ | 集中式日誌 |
 
 ### DevOps
 
@@ -214,9 +236,8 @@ Agent 從人工修正中學習：
 
 - **Python**: 3.11+
 - **Node.js**: 18+
-- **Docker**: 20.10+
-- **kubectl**: 1.28+
-- **Azure 訂閱**: 用於 OpenAI 和 AKS
+- **Docker**: 20.10+ (本地開發)
+- **Azure 訂閱**: 用於 OpenAI、App Service、PostgreSQL 等
 
 ### 本地開發環境
 
@@ -225,7 +246,8 @@ Agent 從人工修正中學習：
 git clone https://github.com/laitim2001/ai-semantic-kernel-framework-project.git
 cd ai-semantic-kernel-framework-project
 
-# 2. 啟動基礎設施（PostgreSQL, Redis, RabbitMQ）
+# 2. 啟動基礎設施（PostgreSQL, Redis）
+# 注：Azure Service Bus 使用雲端服務，無需本地啟動
 docker-compose up -d
 
 # 3. 安裝 Python 依賴
@@ -266,8 +288,8 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/ipa_db
 # Redis
 REDIS_URL=redis://localhost:6379/0
 
-# RabbitMQ
-RABBITMQ_URL=amqp://guest:guest@localhost:5672/
+# Azure Service Bus
+AZURE_SERVICE_BUS_CONNECTION_STRING=Endpoint=sb://...
 
 # JWT
 JWT_SECRET_KEY=your-secret-key-change-in-production
