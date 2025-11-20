@@ -7,7 +7,7 @@
 ![Version](https://img.shields.io/badge/Version-MVP%201.0-green)
 ![License](https://img.shields.io/badge/License-Proprietary-red)
 
-**基於 Microsoft Semantic Kernel 的企業級智能流程自動化平台**
+**基於 Microsoft Agent Framework 的企業級智能流程自動化平台**
 
 [English](#) | [繁體中文](#)
 
@@ -33,7 +33,9 @@
 
 ### 什麼是 IPA Platform?
 
-IPA (Intelligent Process Automation) Platform 是一個基於 **Microsoft Semantic Kernel** 構建的企業級智能流程自動化解決方案，專為中型企業（500-2000人）的 IT 運維和客戶服務團隊設計。
+IPA (Intelligent Process Automation) Platform 是一個基於 **Microsoft Agent Framework** 構建的企業級智能流程自動化解決方案，專為中型企業（500-2000人）的 IT 運維和客戶服務團隊設計。
+
+> 💡 **技術說明**: Agent Framework 是微軟推出的完整 AI Agent 編排系統，內建 Semantic Kernel 作為 LLM 引擎，提供 Agent 協調、工作流管理、檢查點機制等企業級功能。
 
 ### 核心價值主張
 
@@ -59,7 +61,7 @@ IPA (Intelligent Process Automation) Platform 是一個基於 **Microsoft Semant
 ## 🚀 核心特性
 
 ### 1️⃣ AI Agent 編排引擎
-基於 Microsoft Semantic Kernel，支持複雜多步驟工作流：
+基於 Microsoft Agent Framework，支持複雜多步驟工作流：
 - **順序編排**: Task A → Task B → Task C
 - **並行執行**: Task A + B + C 同時運行
 - **條件分支**: IF-THEN-ELSE 邏輯
@@ -179,7 +181,8 @@ Agent 從人工修正中學習：
 |------|------|------|
 | **Python** | 3.11+ | 主要開發語言 |
 | **FastAPI** | 0.100+ | REST API 框架 |
-| **Semantic Kernel** | 1.0+ | AI Agent 框架 |
+| **Agent Framework** | Preview | AI Agent 編排系統 |
+| **Semantic Kernel** | 1.0+ | LLM 引擎（Agent Framework 內建）|
 | **SQLAlchemy** | 2.0+ | ORM |
 | **Pydantic** | 2.0+ | 數據驗證 |
 | **Celery** | 5.3+ | 異步任務隊列 |
