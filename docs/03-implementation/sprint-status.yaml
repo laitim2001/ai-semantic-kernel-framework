@@ -1,7 +1,7 @@
 # Sprint Status Tracking for IPA Platform Implementation
 # This file tracks the progress of all implementation sprints
 # Generated: 2025-11-19
-# Updated: 2025-11-19
+# Updated: 2025-11-20
 
 project:
   name: "IPA - Intelligent Process Automation Platform"
@@ -31,7 +31,7 @@ team:
 sprints:
   sprint_0:
     name: "Sprint 0: Infrastructure & Foundation (MVP Revised)"
-    status: "not-started"
+    status: "in-progress"
     start_date: "2025-11-25"
     end_date: "2025-12-06"
     goals:
@@ -45,9 +45,9 @@ sprints:
     notes: |
       MVP調整: 使用 Azure App Service 替代 Kubernetes，簡化部署複雜度
       詳細規劃參考: docs/03-implementation/sprint-planning/sprint-0-mvp-revised.md
-    
+
     planned_story_points: 38
-    completed_story_points: 0
+    completed_story_points: 5
     
     backlog:
       - id: "S0-1"
@@ -55,8 +55,9 @@ sprints:
         description: "Configure local development environment with Docker Compose"
         story_points: 5
         assignee: "DevOps"
-        status: "not-started"
+        status: "completed"
         priority: "P0 - Critical"
+        completion_date: "2025-11-20"
         
       - id: "S0-2"
         title: "Azure App Service Setup"
@@ -721,8 +722,8 @@ metrics:
   
   cumulative_story_points:
     total_planned: 242
-    total_completed: 0
-    completion_percentage: 0%
+    total_completed: 5
+    completion_percentage: 2.1%
   
   defect_tracking:
     total_bugs: 0
