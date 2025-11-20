@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # Version
-__version__ = "0.1.0"
+__version__ = "0.1.1"  # Test hot-reload
 
 # Create FastAPI app
 app = FastAPI(
