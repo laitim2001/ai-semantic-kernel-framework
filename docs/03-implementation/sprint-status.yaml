@@ -47,7 +47,7 @@ sprints:
       詳細規劃參考: docs/03-implementation/sprint-planning/sprint-0-mvp-revised.md
 
     planned_story_points: 38
-    completed_story_points: 5
+    completed_story_points: 15
     
     backlog:
       - id: "S0-1"
@@ -64,20 +64,22 @@ sprints:
         description: "Set up App Service Plan and instances for staging and production"
         story_points: 5
         assignee: "DevOps"
-        status: "not-started"
+        status: "completed"
         priority: "P0 - Critical"
+        completion_date: "2025-11-20"
         dependencies: []
-        notes: "Replaced Kubernetes with App Service for MVP simplicity"
+        notes: "Replaced Kubernetes with App Service for MVP simplicity. IaC and deployment scripts created, ready for execution."
         
       - id: "S0-3"
         title: "CI/CD Pipeline for App Service"
         description: "Create GitHub Actions workflows for App Service deployment"
         story_points: 5
         assignee: "DevOps"
-        status: "not-started"
+        status: "completed"
         priority: "P0 - Critical"
+        completion_date: "2025-11-20"
         dependencies: ["S0-2"]
-        notes: "Simplified pipeline for App Service vs Kubernetes"
+        notes: "Simplified pipeline for App Service vs Kubernetes. GitHub Actions workflows created for staging and production."
         
       - id: "S0-4"
         title: "Database Infrastructure"

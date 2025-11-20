@@ -1,0 +1,194 @@
+name: Backend - Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-staging-deploy.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  AZURE_WEBAPP_NAME: app-ipa-backend-staging
+  PYTHON_VERSION: '3.11'
+  WORKING_DIRECTORY: ./backend
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio black isort flake8 mypy
+
+      - name: Code formatting check (black)
+        run: |
+          black --check .
+
+      - name: Import sorting check (isort)
+        run: |
+          isort --check-only .
+
+      - name: Linting (flake8)
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Type checking (mypy)
+        run: |
+          mypy src --ignore-missing-imports || true
+
+      - name: Run unit tests
+        run: |
+          pytest tests/unit --cov=src --cov-report=xml --cov-report=term
+        env:
+          ENVIRONMENT: test
+          DATABASE_URL: postgresql://test:test@localhost/test
+          REDIS_URL: redis://localhost:6379/15
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.webapp-url }}
+
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Create deployment package
+        run: |
+          # Create a clean package without dev dependencies
+          pip install --target=".python_packages/lib/site-packages" -r requirements.txt
+
+          # Copy application code
+          mkdir -p deploy_package
+          cp -r src deploy_package/
+          cp -r .python_packages deploy_package/
+          cp main.py deploy_package/
+          cp requirements.txt deploy_package/
+
+          # Create startup script if needed
+          echo "gunicorn -w 2 -k uvicorn.workers.UvicornWorker main:app" > deploy_package/startup.txt
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_STAGING }}
+
+      - name: Deploy to Azure Web App
+        id: deploy
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: ${{ env.WORKING_DIRECTORY }}/deploy_package
+
+      - name: Run database migrations
+        run: |
+          # Install Azure CLI (if not available)
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash || true
+
+          # Get database connection string from Key Vault
+          DB_CONNECTION_STRING=$(az keyvault secret show \
+            --vault-name ${{ secrets.AZURE_KEYVAULT_NAME }} \
+            --name staging-database-connection-string \
+            --query value -o tsv)
+
+          # Run Alembic migrations
+          pip install alembic
+          cd ..
+          export DATABASE_URL="$DB_CONNECTION_STRING"
+          alembic upgrade head
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS_STAGING }}
+
+      - name: Health check
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+
+          HEALTH_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health"
+
+          for i in {1..10}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL")
+
+            if [ "$HTTP_CODE" -eq 200 ]; then
+              echo "✓ Health check passed (HTTP $HTTP_CODE)"
+              RESPONSE=$(curl -s "$HEALTH_URL")
+              echo "Response: $RESPONSE"
+              exit 0
+            else
+              echo "⚠ Health check failed (HTTP $HTTP_CODE), retrying in 10s... ($i/10)"
+              sleep 10
+            fi
+          done
+
+          echo "✗ Health check failed after 10 attempts"
+          exit 1
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✓ Deployment to staging successful"
+            echo "URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+          else
+            echo "✗ Deployment to staging failed"
+          fi
+
+  smoke-tests:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest requests
+
+      - name: Run smoke tests
+        run: |
+          pytest tests/smoke --base-url=https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
+        env:
+          ENVIRONMENT: staging
