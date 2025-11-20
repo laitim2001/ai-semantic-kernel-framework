@@ -1,9 +1,18 @@
 # Solutioning Gate Check
 # IPA Platform - Ready for Implementation Review
 
-**版本**: 1.0  
-**日期**: 2025-11-19  
-**狀態**: 審查中  
+> ℹ️ **MVP 調整說明**: 本文檔於 2025-11-19 完成，基於原始 Kubernetes 架構設計。
+> **2025-11-20 更新**: MVP 階段已調整部署策略：
+> - Kubernetes (AKS) → **Azure App Service**
+> - RabbitMQ → **Azure Service Bus**
+> - ELK Stack → **Application Insights**
+> 
+> 請參閱 [sprint-0-mvp-revised.md](../../03-implementation/sprint-planning/sprint-0-mvp-revised.md) 了解調整後的實施計劃。
+> 本文檔保留作為**完整設計的記錄和未來擴展的參考**。
+
+**版本**: 1.1 (MVP Adjusted)  
+**日期**: 2025-11-19 (原始) / 2025-11-20 (MVP 調整)  
+**狀態**: 已調整 MVP 策略  
 **審查人**: Architecture Team, PM Team, Engineering Team
 
 ---

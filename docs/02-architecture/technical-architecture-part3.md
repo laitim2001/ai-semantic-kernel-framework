@@ -1,6 +1,11 @@
 # Technical Architecture Design (Part 3)
 # 安全架構、監控日誌、部署架構
 
+> ℹ️ **MVP 調整說明**: 本文檔為原始完整架構設計（包含 Kubernetes、ELK Stack）。
+> MVP 階段已調整為 Azure App Service + Application Insights。
+> 請參閱 [technical-architecture.md](./technical-architecture.md) Section 1.2 了解 MVP 部署策略。
+> 本文檔保留作為**生產環境擴展時的參考**。
+
 **接續文檔**: [technical-architecture-part2.md](./technical-architecture-part2.md)
 
 ---
